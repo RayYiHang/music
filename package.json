@@ -9,9 +9,14 @@
   "author": "wdf.coder@gmail.com ",
   "repository": "github:sherlockouo/music",
   "engines": {
-    "node": ">=16.0.0"
+    "node": ">=22.12"
   },
   "packageManager": "pnpm@8.6.12",
+  "pnpm": {
+    "neverBuiltDependencies": [
+      "better-sqlite3"
+    ]
+  },
   "scripts": {
     "install": "turbo run post-install --parallel --no-cache",
     "build": "cross-env-shell IS_ELECTRON=yes turbo run build",
@@ -26,24 +31,13 @@
     "@typescript-eslint/eslint-plugin": "^6.21.0",
     "@typescript-eslint/parser": "^6.21.0",
     "cross-env": "^7.0.3",
-    "electron": "^28.3.3",
-    "electron-winstaller": "^5.4.0",
     "eslint": "^8.57.1",
     "eslint-plugin-react": "^7.37.5",
     "eslint-plugin-react-hooks": "^4.6.2",
-    "prettier": "^2.8.8",
-    "prettier-plugin-tailwindcss": "^0.2.8",
-    "prisma": "^5.22.0",
-    "tsx": "^3.14.0",
-    "turbo": "^1.13.4",
+    "prettier": "^3.8.2",
+    "prettier-plugin-tailwindcss": "^0.7.2",
+    "tsx": "^4.21.0",
+    "turbo": "^2.10.9",
     "typescript": "^5.9.3"
-  },
-  "dependencies": {
-    "@neteasecloudmusicapienhanced/api": "^4.31.0",
-    "@prisma/client": "^5.22.0",
-    "@unblockneteasemusic/server": "^0.28.0",
-    "electron-window-state": "^5.0.3",
-    "log4js": "^6.9.1",
-    "sax": "^1.6.0"
   }
 }
