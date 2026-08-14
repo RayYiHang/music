@@ -38,6 +38,32 @@ export function toHttps(url: string | undefined): string {
   return url ? url.replace(/^http:/, 'https:') : ''
 }
 
+/**
+ * @description 调整封面图片大小到实际绘制的贴片尺寸。
+ * 与 resizeImage 不同，本函数按「CSS 尺寸 × devicePixelRatio」计算所需像素，
+ * 并吸附到 {128, 256, 384, 512} 档位，避免固定 512y512 下载 2-3 倍过大的图。
+ * @param  {string} url 封面图片URL
+ * @param  {number} tileCssPx 图片在页面上绘制的 CSS 像素尺寸
+ */
+export function resizeImageToTile(url: string, tileCssPx: number): string {
+  if (!url) return ''
+
+  const dpr = typeof window !== 'undefined' ? window.devicePixelRatio || 1 : 1
+  const needed = tileCssPx * dpr
+  // Snap up to the next 128px bucket, clamped to [128, 512].
+  const size = Math.min(512, Math.max(128, Math.ceil(needed / 128) * 128))
+
+  // from Apple Music
+  if (url.includes('mzstatic.com')) {
+    return url.replace('{w}', String(size)).replace('{h}', String(size))
+  }
+
+  return `${url}?param=${size}y${size}`.replace(
+    /http(s?):\/\/p\d.music.126.net/,
+    'https://p1.music.126.net'
+  )
+}
+
 export const storage = {
   get(key: string): object | [] | null {
     const text = localStorage.getItem(key)

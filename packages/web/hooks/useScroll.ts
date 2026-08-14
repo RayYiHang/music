@@ -59,7 +59,7 @@ const useScroll = (
     const readHandleScroll = throttle ? lodashThrottle(handleScroll, throttle) : handleScroll
 
     const element = 'current' in ref ? ref?.current : ref
-    element?.addEventListener('scroll', readHandleScroll)
+    element?.addEventListener('scroll', readHandleScroll, { passive: true })
     return () => element?.removeEventListener('scroll', readHandleScroll)
   }, [offset?.bottom, offset?.left, offset?.right, offset?.top, ref, throttle])
 

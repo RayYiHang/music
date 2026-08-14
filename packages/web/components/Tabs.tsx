@@ -19,7 +19,6 @@ function Tabs<T>({
   className?: string
   style?: React.CSSProperties
 }) {
-
   return (
     <div
       className={cx('no-scrollbar flex flex-wrap gap-4 overflow-y-auto', className)}
@@ -29,9 +28,13 @@ function Tabs<T>({
         <div
           key={tab.id as string}
           className={cx(
-            'whitespace-nowrap mr-1 rounded-12 py-3 px-6 text-16 font-medium backdrop-blur transition duration-500',
-            'dark:bg-white/10 dark:text-white/80 hover:dark:bg-white/20 ',
-            'bg-black/10 text-black/80 hover:bg-black/20',
+            // No backdrop-blur: these chips sit above the virtualized
+            // grid, and a backdrop-filter re-filtered the scrolling
+            // covers behind every chip on every frame. The slightly
+            // raised tint below keeps the same legibility.
+            'mr-1 whitespace-nowrap rounded-12 px-6 py-3 text-16 font-medium transition duration-500',
+            'dark:bg-white/15 dark:text-white/80 hover:dark:bg-white/25 ',
+            'bg-black/15 text-black/80 hover:bg-black/25',
             value === tab.id &&
               'bg-accent-color-400 text-black/80 dark:bg-neutral-500 dark:text-white/80',
             tab.iconName && 'iterms-center flex flex-row gap-1 '

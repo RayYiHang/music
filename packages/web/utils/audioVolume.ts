@@ -1,4 +1,6 @@
+import { subscribe as subscribeState } from 'valtio'
 import player from '@/web/states/player'
+import settings, { isLowPowerDevice } from '@/web/states/settings'
 import { State } from '@/web/utils/player'
 
 /**
@@ -13,8 +15,18 @@ import { State } from '@/web/utils/player'
  * the UI still pulses while the song plays.
  *
  * Subscribers are expected to mutate the DOM directly (e.g. write a
- * CSS variable) instead of calling React setState — this loop fires
- * up to ~60 times per second.
+ * CSS variable) instead of calling React setState.
+ *
+ * Duty cycling (all of it transparent to subscribers):
+ *  - Ticks are throttled to ~20Hz (10Hz on low-power devices). The CSS
+ *    opacity transitions smooth the discrete updates into a fluid
+ *    pulse, so a slower tick is visually indistinguishable.
+ *  - Unchanged values are not dispatched — a steady loudness costs
+ *    nothing.
+ *  - The loop fully stops after playback has been paused for >1s
+ *    (restarted the moment playback resumes) and skips work while the
+ *    window is hidden *or unfocused*, so background music no longer
+ *    keeps the renderer warm.
  */
 
 type Listener = (volume: number) => void
@@ -23,7 +35,9 @@ let sharedCtx: AudioContext | null = null
 let sharedAnalyser: AnalyserNode | null = null
 const connectedElements = new WeakSet<HTMLMediaElement>()
 let lastAudioEl: HTMLMediaElement | null = null
-let dataArray: Uint8Array | null = null
+// Typed against plain ArrayBuffer: getByteFrequencyData expects
+// Uint8Array<ArrayBuffer> under TS >= 5.7 lib typings.
+let dataArray: Uint8Array<ArrayBuffer> | null = null
 let webAudioFailed = false
 
 let useFallback = false
@@ -33,12 +47,24 @@ let fallbackPhase = Math.random() * Math.PI * 2
 let smoothed = 0
 let rafId: number | null = null
 let lastTickAt = 0
-// Cap analyser+listener work at ~45Hz. The brightness pulse needs to
-// feel responsive to drum hits without wasting CPU on every vsync.
-// 22ms ≈ 45fps strikes a good perceptual balance: faster than 30Hz
-// (which feels laggy on transients) but ~25% cheaper than full 60Hz.
-const TICK_INTERVAL_MS = 22
+let lastDispatched = -1
+let pausedSince = 0
 const listeners = new Set<Listener>()
+
+// Cap analyser+listener work at ~20Hz (10Hz on low-power devices). The
+// opacity pulse needs to feel responsive to drum hits, but every tick
+// is only a compositor opacity update now, so the extra resolution of
+// 45Hz/60Hz bought nothing visually.
+const TICK_INTERVAL_MS = 50
+const LOW_POWER_TICK_INTERVAL_MS = 100
+const LOW_POWER = isLowPowerDevice()
+// Stop the loop outright once playback has been paused this long — the
+// pulse has fully decayed by then and a parked RAF loop still wakes the
+// compositor for nothing.
+const PAUSE_STOP_MS = 1000
+
+const tickIntervalMs = () =>
+  settings.autoLowPowerMode && LOW_POWER ? LOW_POWER_TICK_INTERVAL_MS : TICK_INTERVAL_MS
 
 function getHowlerAudioElement(): HTMLMediaElement | null {
   try {
@@ -87,22 +113,52 @@ function tryConnect(audioEl: HTMLMediaElement) {
   }
 }
 
+function dispatch() {
+  // Quantize to 3 decimals: while loudness is steady nothing is
+  // dispatched at all, so subscribers stop writing CSS vars.
+  const value = Math.round(smoothed * 1000) / 1000
+  if (value === lastDispatched) return
+  lastDispatched = value
+  listeners.forEach(fn => {
+    try {
+      fn(value)
+    } catch {
+      /* keep the loop alive */
+    }
+  })
+}
+
 const tick = (now: number) => {
-  // When the window/tab is hidden (minimized, background tab, system sleep)
-  // the user can't see the breathing light, so skip reading the analyser
-  // and firing listeners entirely. This keeps the RAF scheduled (RAF is
-  // already throttled by the browser to ~1Hz when hidden) but avoids the
-  // analyser read + full-screen blur repaint that made the laptop hot
-  // while playing music in the background.
-  if (typeof document !== 'undefined' && document.hidden) {
-    // Let smoothed decay toward 0 so the next visible frame doesn't
-    // start from a stale loud value.
+  // When the window/tab is hidden (minimized, background tab, system
+  // sleep) or simply unfocused (user is in another app), nobody can
+  // see the breathing light, so skip reading the analyser and firing
+  // listeners entirely. RAF stays scheduled — the browser already
+  // throttles hidden tabs — and we keep decaying toward 0 so the next
+  // visible frame doesn't start from a stale loud value.
+  if (typeof document !== 'undefined' && (document.hidden || !document.hasFocus())) {
     smoothed = smoothed * 0.9
+    dispatch()
     rafId = requestAnimationFrame(tick)
     return
   }
 
-  if (now - lastTickAt < TICK_INTERVAL_MS) {
+  // Paused: let the pulse decay smoothly for a second, then park the
+  // loop completely (a play-state watcher below restarts it).
+  if (player.state !== State.Playing) {
+    if (!pausedSince) pausedSince = now
+    if (now - pausedSince >= PAUSE_STOP_MS) {
+      if (smoothed !== 0) {
+        smoothed = 0
+        dispatch()
+      }
+      rafId = null
+      return
+    }
+  } else {
+    pausedSince = 0
+  }
+
+  if (now - lastTickAt < tickIntervalMs()) {
     rafId = requestAnimationFrame(tick)
     return
   }
@@ -113,10 +169,7 @@ const tick = (now: number) => {
   if (useFallback || webAudioFailed) {
     if (player.state === State.Playing) {
       fallbackPhase += 0.05
-      raw =
-        0.4 +
-        0.25 * Math.sin(fallbackPhase) +
-        0.15 * Math.sin(fallbackPhase * 2.3 + 1.2)
+      raw = 0.4 + 0.25 * Math.sin(fallbackPhase) + 0.15 * Math.sin(fallbackPhase * 2.3 + 1.2)
     } else {
       raw = 0
     }
@@ -128,7 +181,7 @@ const tick = (now: number) => {
     }
     if (sharedAnalyser) {
       if (!dataArray || dataArray.length !== sharedAnalyser.frequencyBinCount) {
-        dataArray = new Uint8Array(sharedAnalyser.frequencyBinCount)
+        dataArray = new Uint8Array(new ArrayBuffer(sharedAnalyser.frequencyBinCount))
       }
       sharedAnalyser.getByteFrequencyData(dataArray)
       // Skip the very lowest bins (DC + sub-bass rumble) and the very
@@ -145,7 +198,7 @@ const tick = (now: number) => {
 
       if (raw === 0 && player.state === State.Playing) {
         zeroFrames++
-        // ~1.5s of nothing while the player thinks it's playing → CORS
+        // ~3-5s of nothing while the player thinks it's playing → CORS
         // blocked the analyser; switch to the synthetic curve.
         if (zeroFrames > 90) useFallback = true
       } else {
@@ -160,19 +213,14 @@ const tick = (now: number) => {
   // final pixel value so the result reads as fluid rather than jumpy.
   smoothed = smoothed * 0.55 + raw * 0.45
 
-  listeners.forEach(fn => {
-    try {
-      fn(smoothed)
-    } catch {
-      /* keep the loop alive */
-    }
-  })
+  dispatch()
 
   rafId = requestAnimationFrame(tick)
 }
 
 const start = () => {
   if (rafId != null) return
+  pausedSince = 0
   rafId = requestAnimationFrame(tick)
 }
 
@@ -180,6 +228,15 @@ const stop = () => {
   if (rafId == null) return
   cancelAnimationFrame(rafId)
   rafId = null
+}
+
+// Restart the loop the moment playback resumes after a >1s pause
+// parked it. (Focus/visibility don't need a watcher: the loop keeps
+// running — just doing nothing — whenever the window is unfocused.)
+if (typeof window !== 'undefined') {
+  subscribeState(player, () => {
+    if (player.state === State.Playing && listeners.size > 0) start()
+  })
 }
 
 export function subscribeAudioVolume(listener: Listener): () => void {

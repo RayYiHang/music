@@ -32,6 +32,21 @@ interface Settings {
   keyboardShortcuts: KeyboardShortcutSettings
   showTrackListName: boolean
   enableBreathingEffect: boolean
+  autoLowPowerMode: boolean
+}
+
+/**
+ * Device capability check, computed once per session (hardware doesn't
+ * change while the app runs). When true AND `autoLowPowerMode` is
+ * enabled, visually-identical-but-cheaper rendering paths are used
+ * (slower breathing tick + no second background image layer) instead of
+ * disabling the effects.
+ */
+export const isLowPowerDevice = () => {
+  if (typeof navigator === 'undefined') return false
+  const cores = navigator.hardwareConcurrency ?? Number.MAX_SAFE_INTEGER
+  const memory = (navigator as Navigator & { deviceMemory?: number }).deviceMemory
+  return cores <= 4 || (typeof memory === 'number' && memory <= 4)
 }
 
 const initSettings: Settings = {
@@ -58,6 +73,7 @@ const initSettings: Settings = {
   keyboardShortcuts: getKeyboardShortcutDefaultSettings(),
   showTrackListName: false,
   enableBreathingEffect: true,
+  autoLowPowerMode: true,
 }
 
 const STORAGE_KEY = 'settings'

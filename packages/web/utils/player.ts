@@ -16,6 +16,7 @@ import toast from 'react-hot-toast'
 import { scrobble } from '@/web/api/user'
 import { fetchArtistWithReactQuery } from '../api/hooks/useArtist'
 import { appName } from './const'
+import { isLyricsWindow } from './isLyricsWindow'
 
 type TrackID = number
 export enum TrackListSourceType {
@@ -60,6 +61,14 @@ export class Player {
   shuffle: boolean = false
   fmTrack: Track | null = null
 
+  /**
+   * Persistence hook, set by the store (states/player.ts). Invoked after a
+   * user-initiated seek — a seek only mutates `_progress`, which the
+   * throttled persistence deliberately skips, so the resume position is
+   * written eagerly through this hook instead.
+   */
+  _onUserSeek: (() => void) | null = null
+
   init(params: { [key: string]: any }) {
     if (params._track) this._track = params._track
     if (params._trackIndex) this._trackIndex = params._trackIndex
@@ -77,8 +86,14 @@ export class Player {
     if (params.fmTrack) this.fmTrack = params.fmTrack
 
     this.state = State.Ready
-    if (this.trackID) this._playAudio(false) // just load the audio, not play
-    this._initFM()
+    // The desktop-lyrics window is a read-only consumer of player state
+    // (progress/track synced via IPC). Loading audio there would create a
+    // muted Howl with html5 preload=auto that downloads the full track, and
+    // _initFM would fire network calls — all for a window that never plays.
+    if (!isLyricsWindow) {
+      if (this.trackID) this._playAudio(false) // just load the audio, not play
+      this._initFM()
+    }
     this._initMediaSession()
 
     // window.ipcRenderer?.send(IpcChannels.Repeat, { mode: this._repeatMode })
@@ -165,6 +180,7 @@ export class Player {
   set progress(value) {
     this._progress = value
     _howler.seek(value)
+    this._onUserSeek?.()
   }
 
   /**
@@ -174,6 +190,9 @@ export class Player {
    */
   liveCurrentTime(): number {
     if (this.state === State.Loading) return 0
+    // The lyrics window has no Howl of its own (audio plays in the main
+    // window); its progress is pushed via IPC into `_progress`.
+    if (isLyricsWindow) return this._progress
     try {
       const t = _howler.seek()
       if (typeof t === 'number' && !isNaN(t)) return t

@@ -24,8 +24,10 @@ import React from 'react'
 import './i18n/i18n'
 import { appName } from './utils/const'
 
-// google analytic
-ReactGA.initialize('G-QFPDJGN751')
+// google analytic — web build only; the Electron app must not phone home.
+if (!window.ipcRenderer) {
+  ReactGA.initialize('G-QFPDJGN751')
+}
 
 // 前端报错监控
 Sentry.init({
@@ -44,10 +46,10 @@ Sentry.init({
   release: `${appName}@${pkg.version}`,
   environment: import.meta.env.MODE,
 
-  // Set tracesSampleRate to 1.0 to capture 100%
-  // of transactions for performance monitoring.
-  // We recommend adjusting this value in production
-  tracesSampleRate: 1.0,
+  // Capture 100% of transactions in dev for debugging, but sample down to
+  // 5% in production — full-rate tracing is far too heavy for low-end
+  // machines and floods Sentry.
+  tracesSampleRate: import.meta.env.DEV ? 1.0 : 0.05,
 })
 
 ipcRenderer()

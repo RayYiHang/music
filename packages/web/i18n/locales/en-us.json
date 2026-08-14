@@ -71,7 +71,18 @@
     "removed-from-playlist": "Removed from playlist"
   },
   "search": {
-    "search": "Search"
+    "search": "Search",
+    "all": "All",
+    "best-match": "Best Match",
+    "artist": "Artists",
+    "album": "Albums",
+    "song": "Tracks",
+    "playlist": "Playlists",
+    "show-all": "Show All",
+    "double-click-to-play": "Double-click to play",
+    "no-results": "No results found",
+    "error": "Something went wrong, please retry",
+    "retry": "Retry"
   },
   "my": {
     "xxxs-liked-tracks": "{{nickname}}'s Liked Tracks",
@@ -113,6 +124,7 @@
     "jooxCookie": "JOOX_COOKIE",
     "show-track-list-name": "Show Track List Name in Browse",
     "breathing-effect": "Lyrics Breathing Light Effect",
+    "auto-low-power-mode": "Auto Low-Power Mode (cheaper effects on low-spec devices)",
     "keyboard-shortcuts": {
       "title": "Keyboard Shortcuts",
       "enable-global": "Enable Global Keyboard Shortcuts",

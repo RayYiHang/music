@@ -4,8 +4,10 @@ import { useNavigate } from 'react-router-dom'
 import { ease } from '@/web/utils/const'
 import Icon from '../Icon'
 
+// blur 45px→8px + slightly raised tint — same frosted look, far
+// cheaper backdrop-filter over the breathing layer.
 const buttonClassNames =
-  'app-region-no-drag rounded-full dark:bg-white/10 bg-black/10 p-2.5 backdrop-blur-3xl dark:hover:bg-white/20 dark:hover:text-white/60 hover:bg-black/20 hover:text-black/60 transition-all duration-100 ease-in'
+  'app-region-no-drag rounded-full dark:bg-white/15 bg-black/15 p-2.5 backdrop-blur-lg dark:hover:bg-white/25 dark:hover:text-white/60 hover:bg-black/25 hover:text-black/60 transition-all duration-100 ease-in'
 
 const NavigationButtons = () => {
   const navigate = useNavigate()

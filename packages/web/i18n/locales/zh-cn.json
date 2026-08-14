@@ -71,7 +71,18 @@
     "removed-from-playlist": "已从歌单中移除"
   },
   "search": {
-    "search": "搜索"
+    "search": "搜索",
+    "all": "全部",
+    "best-match": "最佳匹配",
+    "artist": "艺人",
+    "album": "专辑",
+    "song": "歌曲",
+    "playlist": "歌单",
+    "show-all": "查看全部",
+    "double-click-to-play": "双击播放",
+    "no-results": "没有找到相关结果",
+    "error": "加载失败，请重试",
+    "retry": "重试"
   },
   "my": {
     "xxxs-liked-tracks": "{{nickname}}喜欢的音乐",
@@ -113,6 +124,7 @@
     "jooxCookie": "JOOX_COOKIE",
     "show-track-list-name": "在 Browse 页面显示歌单名称",
     "breathing-effect": "歌词呼吸灯效果",
+    "auto-low-power-mode": "自动低功耗模式（低配置设备自动降低动效开销）",
     "keyboard-shortcuts": {
       "title": "快捷键",
       "enable-global": "启用全局快捷键",

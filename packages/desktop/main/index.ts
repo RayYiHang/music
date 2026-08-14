@@ -1,11 +1,6 @@
 import './preload' // must be first
 import './sentry'
-import {
-  app,
-  BrowserWindow,
-  BrowserWindowConstructorOptions,
-  shell,
-} from 'electron'
+import { app, BrowserWindow, BrowserWindowConstructorOptions, shell } from 'electron'
 import { release, type } from 'os'
 import { join } from 'path'
 import log from './log'
@@ -43,7 +38,7 @@ class Main {
       app.quit()
       process.exit(0)
     }
-    
+
     // create IPFS Server
     app.whenReady().then(async () => {
       log.info('[index] App ready')
@@ -85,7 +80,7 @@ class Main {
     this.win.webContents.openDevTools()
   }
 
-  createTouchBar(){
+  createTouchBar() {
     createTouchBar(this.win!)
   }
 
@@ -131,12 +126,23 @@ class Main {
       frame: false,
       fullscreenable: true,
       resizable: true,
+      // Transparent window is what gives the 12px rounded body corners
+      // (body { border-radius: 12px } needs alpha to show the desktop
+      // behind the corners). Transparency used to be expensive because
+      // the breathing background re-filtered a full-screen layer ~45
+      // times per second — that per-frame invalidation is gone (the
+      // pulse is compositor-only now), so what's left is plain alpha
+      // compositing, which is acceptable. Visual fidelity wins: keep it.
       transparent: true,
       backgroundColor: 'rgba(0, 0, 0, 0)',
       show: false,
     }
-    if(isWindows) {
+    if (isWindows) {
+      // Windows resets to an opaque window (no rounded corners there);
+      // give it a real opaque color too so the pre-load surface isn't a
+      // stray transparent black on an opaque window.
       options.transparent = false
+      options.backgroundColor = '#000000'
     }
     this.win = new BrowserWindow(options)
     mainWindowStateKeeper.manage(this.win)

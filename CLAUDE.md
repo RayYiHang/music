@@ -282,9 +282,11 @@ i18next configuration in `packages/web/i18n/`. Translation files follow the stan
 - Uses react-virtuoso for efficient list rendering
 - Custom ImageManager class for preloading and caching images
 - Key configuration in `packages/web/components/CoverRowVirtual.tsx`:
-  - `overscan={2400}` - Pre-renders ~7-8 rows outside viewport
-  - `increaseViewportBy={{ top: 3200, bottom: 3200 }}` - Extends viewport by ~10 rows
-  - Initial preload: 48 items (12 rows) to reduce white screen during fast scrolling
+  - `increaseViewportBy={{ top: 600, bottom: 600 }}` - Extends viewport ~2 rows past each edge (no `overscan` — stacking both props doubled the mounted range to ~60 tiles)
+  - `defaultItemHeight={240}` - Close to the real row height (~230-250px) to avoid measure jitter on fast scroll
+  - `initialItemCount={8}` - Renders the first rows before measurement for a stable first paint (`initialTopMostItemIndex` is used instead when a scroll position is being restored)
+  - Initial idle preload: 24 items (6 rows) to reduce white screen during fast scrolling
+- Cover images request tile-aware `?param=` sizes (snapped to 128/256/384/512 by CSS size x devicePixelRatio, see `resizeImageToTile` in `packages/web/utils/common.ts`) instead of a fixed 512px
 - Images use lazy loading with skeleton placeholders and fade-in animation
 
 ## Platform-Specific Considerations

@@ -116,6 +116,24 @@ const BreathingEffect = () => {
   )
 }
 
+const AutoLowPowerMode = () => {
+  const { t } = useTranslation()
+  const { autoLowPowerMode } = useSnapshot(settings)
+  return (
+    <>
+      <Option>
+        <div className='flex flex-col'>
+          <OptionText>{t`settings.auto-low-power-mode`}</OptionText>
+        </div>
+        <Switch
+          enabled={autoLowPowerMode}
+          onChange={value => (settings.autoLowPowerMode = value)}
+        ></Switch>
+      </Option>
+    </>
+  )
+}
+
 const Browse = () => {
   const { showTrackListName } = useSnapshot(settings)
   const { t } = useTranslation()
@@ -148,6 +166,7 @@ const Appearance = () => {
       <ShowDevices />
       <LyricsBlur />
       <BreathingEffect />
+      <AutoLowPowerMode />
       <Browse />
     </div>
   )

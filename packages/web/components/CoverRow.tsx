@@ -11,7 +11,11 @@ import ArtistInline from './ArtistsInLine'
 type ItemTitle = undefined | 'name'
 type ItemSubTitle = undefined | 'artist' | 'year'
 
-const Album = ({
+// Items are memoized with stable callbacks so a parent re-render (e.g.
+// react-query refetch of an unrelated query) doesn't re-render every cover
+// on the page. The covers themselves render through the shared <Image>
+// component (native lazy loading + CSS fade-in, no per-image observers).
+const Album = memo(({
   album,
   itemTitle,
   itemSubtitle,
@@ -21,12 +25,12 @@ const Album = ({
   itemSubtitle?: ItemSubTitle
 }) => {
   const navigate = useNavigate()
-  const goTo = () => {
+  const goTo = useCallback(() => {
     navigate(`/album/${album.id}`)
-  }
-  const prefetch = () => {
+  }, [album.id, navigate])
+  const prefetch = useCallback(() => {
     prefetchAlbum({ id: album.id })
-  }
+  }, [album.id])
 
   const title =
     itemTitle &&
@@ -67,9 +71,10 @@ const Album = ({
       )}
     </div>
   )
-}
+})
+Album.displayName = 'Album'
 
-const Playlist = ({ playlist }: { playlist: Playlist }) => {
+const Playlist = memo(({ playlist }: { playlist: Playlist }) => {
   const navigate = useNavigate()
   const goTo = useCallback(() => {
     navigate(`/playlist/${playlist.id}`)
@@ -95,7 +100,8 @@ const Playlist = ({ playlist }: { playlist: Playlist }) => {
       </div>
     </div>
   )
-}
+})
+Playlist.displayName = 'Playlist'
 
 const CoverRow = ({
   albums,

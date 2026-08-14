@@ -14,17 +14,25 @@ import { ease } from '../utils/const'
 import { motion } from 'framer-motion'
 import Router from '@/web/components/Router'
 import BreathingBackground from '@/web/components/BreathingBackground'
+import useScrollIdle from '@/web/hooks/useScrollIdle'
 
-// Performance note: When breathing background is enabled, it provides its own
-// blur(40px) effect on the cover image. The separate backdrop-blur-xl mask and
-// backdrop-blur-md foreground are then redundant and waste ~60% of GPU tile
-// memory. We conditionally skip them when breathing is active.
+// Performance note: the background image behind the app is STATIC, so
+// full-screen backdrop-filter layers bought nothing — they only forced
+// the GPU to keep extra tile copies (~60% more tile memory) and
+// re-filter on every scroll. The old backdrop-blur-xl mask +
+// backdrop-blur-md foreground were removed; their dimming contribution
+// is folded into the base tint below (dark /70→/85, light /90→/95 in
+// the non-breathing path, kept identical when breathing is active).
 
 const Layout = () => {
   const playerSnapshot = useSnapshot(player)
   const { fullscreen } = useSnapshot(uiStates)
   const showPlayer = !!playerSnapshot.track
   const { showBackgroundImage, theme, enableBreathingEffect } = useSnapshot(settings)
+  // Tracks whether any scroll container is scrolling (toggles
+  // html[data-scrolling] so CSS can cheap out on backdrop-filter
+  // during motion). Mounted once, app-wide.
+  useScrollIdle()
 
   return (
     <div>
@@ -61,7 +69,16 @@ const Layout = () => {
                   background-position: center;
                   transform: translate3d(0, 0, 0);
                 `,
-              theme === 'dark' ? 'bg-black/70' : 'bg-white/90'
+              // Non-breathing path: stronger tint compensates for the
+              // removed backdrop-blur layers (see note above). Breathing
+              // path keeps the original values so its look is unchanged.
+              enableBreathingEffect
+                ? theme === 'dark'
+                  ? 'bg-black/70'
+                  : 'bg-white/90'
+                : theme === 'dark'
+                ? 'bg-black/85'
+                : 'bg-white/95'
             )}
             style={{
               backgroundImage: showBackgroundImage ? `url(${player.track?.al?.picUrl})` : '',
@@ -74,33 +91,23 @@ const Layout = () => {
             <div
               className={cx(
                 window.env?.isElectron && !fullscreen && 'rounded-12',
-                window.env?.isElectron && css`
-                  position: absolute;
-                  top: 0;
-                  left: 0;
-                  width: 100%;
-                  height: 100%;
-                  background-color: rgba(0, 0, 0, 0.05); /* 设置半透明背景颜色 */
-                  // z-index: 1; /* 设置层级为较高的值，确保遮罩在内容上方 */
-                `
+                window.env?.isElectron &&
+                  css`
+                    position: absolute;
+                    top: 0;
+                    left: 0;
+                    width: 100%;
+                    height: 100%;
+                    background-color: rgba(0, 0, 0, 0.05); /* 设置半透明背景颜色 */
+                    // z-index: 1; /* 设置层级为较高的值，确保遮罩在内容上方 */
+                  `
               )}
             ></div>
           </motion.div>
-          {/* mask — skip backdrop-blur when breathing effect provides its own blur */}
-          {!enableBreathingEffect && (
-            <motion.div
-              className={cx(
-                window.env?.isElectron && !fullscreen && 'rounded-12',
-                'absolute inset-0 z-0 backdrop-blur-xl',
-                theme === 'dark' ? 'bg-black/40' : 'bg-white/40'
-              )}
-            />
-          )}
           <div
             id='layout-foreground'
             className={cx(
               'rounded-12',
-              !enableBreathingEffect && 'backdrop-blur-md',
               'relative grid h-screen select-none overflow-hidden',
               'text-black transition-colors duration-400 dark:text-white'
             )}

@@ -37,12 +37,17 @@ const Background = () => {
   // sustained fan/heat when playing music. 12px is still enough to
   // hide text scrolling under the topbar without re-blurring the whole
   // viewport every frame.
+  // `top-bar-blur` + useScrollIdle: while the page is scrolling, CSS
+  // swaps this backdrop-filter for a theme-matched tint (content is
+  // moving, so the difference is invisible) and restores the blur at
+  // rest — see global.css.
   if (enableBreathingEffect) {
     return (
       <div
         className={cx(
+          'top-bar-blur',
           'absolute inset-0 h-full w-full',
-          window.env?.isElectron && !fullscreen && 'rounded-tr-12 rounded-tl-12'
+          window.env?.isElectron && !fullscreen && 'rounded-tl-12 rounded-tr-12'
         )}
         style={{
           backdropFilter: 'blur(12px) saturate(1.2)',
@@ -111,7 +116,7 @@ const Background = () => {
                   'relative inset-0 z-0 ',
                   'h-full w-full',
                   show && 'backdrop-blur-2xl',
-                  window.env?.isElectron && !fullscreen && 'rounded-tr-12 rounded-tl-12'
+                  window.env?.isElectron && !fullscreen && 'rounded-tl-12 rounded-tr-12'
                 )}
               >
                 <div
@@ -140,8 +145,8 @@ const TopbarDesktop = () => {
       className={cx(
         // app-region-drag 删除后即可移动console
         'app-region-drag',
-        ' fixed top-0 left-0 right-0 z-20 flex items-center justify-between',
-        'pt-11 pb-10 pr-6',
+        ' fixed left-0 right-0 top-0 z-20 flex items-center justify-between',
+        'pb-10 pr-6 pt-11',
         css`
           padding-left: 144px;
         `

@@ -1,19 +1,33 @@
-import { ReactQueryDevtools } from '@tanstack/react-query-devtools'
+import { lazy, Suspense } from 'react'
+
+// Lazily imported so `@tanstack/react-query-devtools` (and its whole
+// dependency subtree) stays out of the production bundle: the dynamic
+// import sits behind `import.meta.env.DEV`, which Vite statically replaces
+// with `false` and rollup then dead-code-eliminates.
+const ReactQueryDevtools = lazy(() =>
+  import('@tanstack/react-query-devtools').then(d => ({
+    default: d.ReactQueryDevtools,
+  }))
+)
 
 const Devtool = () => {
+  if (!import.meta.env.DEV) return null
+
   return (
-    <ReactQueryDevtools
-      initialIsOpen={false}
-      toggleButtonProps={{
-        style: {
-          position: 'fixed',
-          top: 36,
-          right: 148,
-          bottom: 'atuo',
-          left: 'auto',
-        },
-      }}
-    />
+    <Suspense fallback={null}>
+      <ReactQueryDevtools
+        initialIsOpen={false}
+        toggleButtonProps={{
+          style: {
+            position: 'fixed',
+            top: 36,
+            right: 148,
+            bottom: 'atuo',
+            left: 'auto',
+          },
+        }}
+      />
+    </Suspense>
   )
 }
 

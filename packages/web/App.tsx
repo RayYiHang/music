@@ -19,7 +19,7 @@ const App = () => {
       {/* What's this for */}
       <ScrollRestoration />
       <IpcRendererReact />
-      <Devtool />
+      {import.meta.env.DEV && <Devtool />}
     </ErrorBoundary>
   )
 }

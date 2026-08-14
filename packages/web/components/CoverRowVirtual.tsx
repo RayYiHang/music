@@ -1,8 +1,9 @@
-import { resizeImage } from '@/web/utils/common'
+import { resizeImageToTile } from '@/web/utils/common'
 import { cx } from '@emotion/css'
 import Loading from '@/web/components/Animation/Loading'
 import useSettings from '@/web/hooks/useSettings'
-import { useNavigate } from 'react-router-dom'
+import scrollPositions, { VIRTUOSO_SCROLL_PREFIX } from '@/web/states/scrollPositions'
+import { useLocation, useNavigate } from 'react-router-dom'
 import { prefetchAlbum } from '@/web/api/hooks/useAlbum'
 import { prefetchPlaylist } from '@/web/api/hooks/usePlaylist'
 import { Virtuoso } from 'react-virtuoso'
@@ -13,6 +14,7 @@ import React, {
   ReactNode,
   memo,
   useEffect,
+  useLayoutEffect,
   useMemo,
   useState,
   useRef,
@@ -113,9 +115,13 @@ const imageManager = new ImageManager()
 
 type Item = Album | Playlist
 
-const getImageUrl = (item: Item): string => {
+// Approximate row height (image + margins) — also passed to Virtuoso as
+// `defaultItemHeight` so first paint and fast-scroll measurement agree.
+const ROW_HEIGHT = 240
+
+const getImageUrl = (item: Item, tileCssPx: number): string => {
   const url = item?.picUrl || (item as Playlist)?.coverImgUrl || ''
-  return resizeImage(url, 'md')
+  return resizeImageToTile(url, tileCssPx)
 }
 
 const HoverPortal = memo(({ children }: { children?: ReactNode }) => {
@@ -190,11 +196,12 @@ CoverItemHoverCardContent.displayName = 'CoverItemHoverCardContent'
 
 const CoverItem: FC<{
   item: Item
+  tileCssPx: number
   goTo: (id: number) => void
   prefetch: (id: number) => void
   showTrackListName: boolean
-}> = memo(({ item, goTo, prefetch, showTrackListName }) => {
-  const imageUrl = useMemo(() => getImageUrl(item), [item])
+}> = memo(({ item, tileCssPx, goTo, prefetch, showTrackListName }) => {
+  const imageUrl = useMemo(() => getImageUrl(item, tileCssPx), [item, tileCssPx])
   const [hoverRect, setHoverRect] = useState<{
     width: number
     height: number
@@ -315,6 +322,7 @@ const CoverRow = ({
   onEndReached,
 }: CoverRowProps) => {
   const navigate = useNavigate()
+  const location = useLocation()
   const { showTrackListName } = useSettings()
 
   const goTo = useCallback((id: number) => {
@@ -346,11 +354,48 @@ const CoverRow = ({
     return out
   }, [items])
 
-  // 预加载前 48 项 (12 行)
+  // Measure the wrapper once so cover URLs can request a pixel size that
+  // matches the tiles actually painted (fixed 4-column grid, gap-4/lg:gap-6).
+  // This is what lets resizeImageToTile download 256px instead of the old
+  // fixed 512px covers on typical DPR-1 windows. Measured in a layout
+  // effect so the corrected URLs land before first paint.
+  const wrapperRef = useRef<HTMLDivElement>(null)
+  const [tileCssPx, setTileCssPx] = useState(256)
+  useLayoutEffect(() => {
+    const el = wrapperRef.current
+    if (!el) return
+
+    const update = () => {
+      const gap = window.innerWidth >= 1024 ? 24 : 16
+      const tile = Math.floor((el.clientWidth - gap * 3) / 4)
+      if (tile > 0) setTileCssPx(tile)
+    }
+    update()
+
+    let ro: ResizeObserver | undefined
+    if (typeof ResizeObserver !== 'undefined') {
+      ro = new ResizeObserver(update)
+      ro.observe(el)
+    } else {
+      window.addEventListener('resize', update)
+    }
+    // Re-measure when the window moves to a screen with a different DPR.
+    const mq = window.matchMedia(`(resolution: ${window.devicePixelRatio}dppx)`)
+    mq.addEventListener('change', update)
+
+    return () => {
+      mq.removeEventListener('change', update)
+      window.removeEventListener('resize', update)
+      ro?.disconnect()
+    }
+  }, [])
+
+  // 预加载前 24 项 (6 行) — enough to cover the viewport plus the Virtuoso
+  // pre-render margin; more just steals bandwidth from what's visible.
   useEffect(() => {
     if (items.length === 0) return
 
-    const urlsToLoad = items.slice(0, 80).map(getImageUrl)
+    const urlsToLoad = items.slice(0, 24).map(item => getImageUrl(item, tileCssPx))
     let index = 0
     const batchSize = 12
 
@@ -367,7 +412,7 @@ const CoverRow = ({
     }
 
     loadBatch()
-  }, [items])
+  }, [items, tileCssPx])
 
   const virtuosoStyle = useMemo(() => {
     if (dynamicHeight) {
@@ -414,6 +459,7 @@ const CoverRow = ({
           <CoverItem
             key={item.id}
             item={item}
+            tileCssPx={tileCssPx}
             goTo={goTo}
             prefetch={prefetch}
             showTrackListName={showTrackListName}
@@ -421,11 +467,24 @@ const CoverRow = ({
         ))}
       </div>
     ),
-    [goTo, prefetch, showTrackListName]
+    [goTo, prefetch, showTrackListName, tileCssPx]
   )
 
+  // Scroll restoration: jump straight to the saved region on mount (the
+  // scroller element itself is restored by ScrollRestoration). Computed
+  // once — initialTopMostItemIndex only applies at mount. Reads the same
+  // `virt:`-prefixed key ScrollRestoration saves Virtuoso offsets under —
+  // never the <main> position of the same route.
+  const initialTopMostItemIndexRef = useRef<number | undefined>(undefined)
+  if (initialTopMostItemIndexRef.current === undefined) {
+    const saved = scrollPositions.get(VIRTUOSO_SCROLL_PREFIX + location.pathname) ?? 0
+    initialTopMostItemIndexRef.current =
+      saved > 0 ? Math.max(0, Math.floor(saved / ROW_HEIGHT) - 1) : 0
+  }
+  const hasSavedScroll = initialTopMostItemIndexRef.current > 0
+
   return (
-    <div className={cx('min-h-0', className)}>
+    <div ref={wrapperRef} className={cx('min-h-0', className)}>
       {title && <h4 className='mb-6 text-14 font-bold uppercase dark:text-neutral-300'>{title}</h4>}
 
       <Virtuoso
@@ -434,11 +493,15 @@ const CoverRow = ({
         components={onEndReached ? virtuosoComponents : emptyComponents}
         context={virtuosoContext}
         data={rows}
-        overscan={800}
-        defaultItemHeight={320}
+        defaultItemHeight={ROW_HEIGHT}
         itemContent={itemContent}
         endReached={onEndReached}
-        increaseViewportBy={{ top: 800, bottom: 400 }}
+        // `overscan` is deliberately NOT set — it stacks with
+        // increaseViewportBy (both extend the render range) and was mounting
+        // ~60 tiles. This single margin keeps ~2 rows alive past each edge.
+        increaseViewportBy={{ top: 600, bottom: 600 }}
+        initialItemCount={hasSavedScroll ? undefined : 8}
+        initialTopMostItemIndex={hasSavedScroll ? initialTopMostItemIndexRef.current : undefined}
       />
     </div>
   )

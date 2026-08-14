@@ -3,32 +3,22 @@ import useUserLikedTracksIDs, { useMutationLikeATrack } from '@/web/api/hooks/us
 import player from '@/web/states/player'
 import useIpcRenderer from '@/web/hooks/useIpcRenderer'
 import { State as PlayerState } from '@/web/utils/player'
+import { isLyricsWindow } from '@/web/utils/isLyricsWindow'
 import { useEffect, useRef, useState } from 'react'
 import { useEffectOnce } from 'react-use'
-import { useSnapshot } from 'valtio'
+import { subscribe, useSnapshot } from 'valtio'
 import { appName } from './utils/const'
 
-// The desktop-lyrics window loads the same React bundle as the main
-// window (via `#/desktoplyrics`). Without this guard it would subscribe
-// to player state and echo every SyncProgress/Play/Pause/Like/Tray IPC
-// back to the main process — doubling IPC traffic during playback and
-// making the lyrics window a second render process that does work it
-// shouldn't. The lyrics window should be a read-only consumer of player
-// state pushed from the main window; it has no business sending any of
-// these events itself.
-//
-// Computed at module load (location.hash doesn't change for a given
-// window instance — the main window is opened at `/` and the lyrics
-// window is opened at `#/desktoplyrics`). Done this way rather than
-// early-returning from the component so we never violate the Rules of
-// Hooks.
-const isLyricsWindow =
-  typeof window !== 'undefined' &&
-  window.location?.hash?.startsWith('#/desktoplyrics')
-
+// See utils/isLyricsWindow.ts — the lyrics window is a read-only consumer
+// of player state pushed from the main window; it never sends these events
+// itself. Checked as a module constant rather than early-returning from
+// the component so we never violate the Rules of Hooks.
 const IpcRendererReact = () => {
   const [isPlaying, setIsPlaying] = useState(false)
-  const { track, state, progress, trackID } = useSnapshot(player)
+  // NOTE: `progress` is deliberately NOT read here — it mutates 2x/sec
+  // while playing; the valtio op subscription below forwards it to the
+  // main process without re-rendering this component.
+  const { track, state, trackID } = useSnapshot(player)
   const trackIDRef = useRef(0)
 
   // Liked songs ids
@@ -63,12 +53,55 @@ const IpcRendererReact = () => {
   }, [userLikedSongs, track])
 
   // 同步歌词进度›
+  // Driven by a valtio subscription on the raw op stream instead of a
+  // snapshot-driven effect: progress mutates continuously while playing,
+  // which would re-render this component at the mutation rate. Note the
+  // 500ms playback tick (utils/player.ts) writes `_progress` directly —
+  // subscribeKey('progress') never sees it, and the lyrics window would
+  // freeze after the last seek. Inspecting ops instead:
+  //  - user seeks assign `progress` (which also writes `_progress`) —
+  //    forwarded immediately,
+  //  - the playback tick only writes `_progress` — forwarded throttled to
+  //    the tick rate, trailing.
   useEffect(() => {
     if (isLyricsWindow) return
     window.ipcRenderer?.send(IpcChannels.SyncProgress, {
-      progress: progress,
+      progress: player.progress,
     })
-  }, [progress])
+
+    const THROTTLE_MS = 500
+    let lastSentAt = Date.now()
+    let timer: ReturnType<typeof setTimeout> | null = null
+
+    const send = () => {
+      lastSentAt = Date.now()
+      if (timer) {
+        clearTimeout(timer)
+        timer = null
+      }
+      window.ipcRenderer?.send(IpcChannels.SyncProgress, {
+        progress: player.progress,
+      })
+    }
+
+    const scheduleSend = () => {
+      if (timer) return
+      const wait = THROTTLE_MS - (Date.now() - lastSentAt)
+      if (wait <= 0) send()
+      else timer = setTimeout(send, wait)
+    }
+
+    const unsubscribe = subscribe(player, ops => {
+      const isSeek = ops.some(op => op[1]?.[0] === 'progress')
+      if (!isSeek && !ops.some(op => op[1]?.[0] === '_progress')) return
+      isSeek ? send() : scheduleSend()
+    })
+
+    return () => {
+      unsubscribe()
+      if (timer) clearTimeout(timer)
+    }
+  }, [])
 
   // 同步歌曲
   useEffect(() => {
