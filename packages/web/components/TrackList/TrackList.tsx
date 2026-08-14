@@ -139,7 +139,7 @@ const Track  = memo(({
       </div>
 
       {/* Track name */}
-      <div className='flex flex-grow items-center'>
+      <div className='flex grow items-center'>
         <span className='line-clamp-1'>{track?.name}</span>
         {/* Explicit symbol */}
         {[1318912, 1310848].includes(track.mark) && (
@@ -234,7 +234,7 @@ const TrackList = ({
           <div className='mr-3 rounded-full  lg:mr-6'>00</div>
 
           {/* Track name */}
-          <div className='flex flex-grow items-center'>
+          <div className='flex grow items-center'>
             <span className='mr-4 rounded-full '>PLACEHOLDER1234567</span>
           </div>
 

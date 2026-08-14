@@ -175,7 +175,7 @@ const LoginWithPhoneOrEmail = () => {
                   persistedUiStates.loginPhoneCountryCode = e.target.value
                 }}
                 className={cx(
-                  'my-3.5 flex-shrink-0 bg-transparent placeholder:text-white/30',
+                  'my-3.5 shrink-0 bg-transparent placeholder:text-white/30',
                   css`
                     width: 28px;
                   `
@@ -183,10 +183,10 @@ const LoginWithPhoneOrEmail = () => {
                 placeholder='+86'
                 value={countryCode}
               />
-              <div className='mx-2 h-5 w-px flex-shrink-0 bg-white/20'></div>
+              <div className='mx-2 h-5 w-px shrink-0 bg-white/20'></div>
               <input
                 onChange={e => setPhone(e.target.value)}
-                className='my-3.5 flex-grow appearance-none bg-transparent placeholder:text-white/30'
+                className='my-3.5 grow appearance-none bg-transparent placeholder:text-white/30'
                 placeholder={t`auth.phone`!}
                 type='tel'
                 value={phone}
@@ -209,7 +209,7 @@ const LoginWithPhoneOrEmail = () => {
             >
               <input
                 onChange={e => setEmail(e.target.value)}
-                className='w-full flex-grow appearance-none bg-transparent placeholder:text-white/30'
+                className='w-full grow appearance-none bg-transparent placeholder:text-white/30'
                 placeholder={t`auth.email`!}
                 type='email'
                 value={email}

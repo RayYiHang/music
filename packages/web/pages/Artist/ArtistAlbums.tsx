@@ -40,7 +40,7 @@ const ArtistAlbum = () => {
             albums={page}
             itemTitle='name'
             itemSubtitle='year'
-            className='h-full w-full flex-shrink-0 '
+            className='h-full w-full shrink-0 '
           />
         ))}
       </div>

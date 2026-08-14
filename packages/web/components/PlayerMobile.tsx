@@ -111,16 +111,16 @@ const PlayerMobile = ({
       </div>
 
       {/* Track info */}
-      <div className='relative flex h-full flex-grow items-center overflow-hidden px-3'>
+      <div className='relative flex h-full grow items-center overflow-hidden px-3'>
         <motion.div
           drag='x'
           dragConstraints={{ left: 0, right: 0 }}
           onDragStart={() => setLocked(true)}
           onDragEnd={onDragEnd}
           dragDirectionLock={true}
-          className='flex h-full flex-grow items-center '
+          className='flex h-full grow items-center '
         >
-          <div className='flex-shrink-0'>
+          <div className='shrink-0'>
             <div className='line-clamp-1 text-14 font-bold text-white'>{track?.name}</div>
             <div className='mt-2 h-px w-2/5 bg-black/10 dark:bg-white/10'></div>
             <div className='line-clamp-1 mt-1 text-12 font-bold text-white/60'>
@@ -131,7 +131,7 @@ const PlayerMobile = ({
               />
             </div>
           </div>
-          <div className='h-full flex-grow'></div>
+          <div className='h-full grow'></div>
         </motion.div>
 
         <div

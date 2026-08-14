@@ -33,7 +33,7 @@ const LyricRow = memo(
       <div
         data-index={index}
         className={cx(
-          'lyrics-row leading-120 my-2 p-4 ease-in-out iterms-center text-center',
+          'lyrics-row my-2 p-4 ease-in-out iterms-center text-center',
           'tracking-lyric leading-lyric text-md transition duration-400 dark:hover:bg-white/10 hover:bg-gray-500/10  rounded-lg',
           'font-barlow',
           isActive

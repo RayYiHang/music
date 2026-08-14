@@ -24,5 +24,7 @@ ${name === 'blue' ? ':root' : `[data-accent-color='${name}']`} {${color}
 `
 })
 
-const formatted = prettier.format(css, { ...prettierConfig, parser: 'css' })
-fs.writeFileSync('./styles/accentColor.css', formatted)
+// prettier v3's format() returns a Promise (it was synchronous in v2)
+prettier
+  .format(css, { ...prettierConfig, parser: 'css' })
+  .then(formatted => fs.writeFileSync('./styles/accentColor.css', formatted))

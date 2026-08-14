@@ -6,11 +6,11 @@ import SettingsButton from './SettingsButton'
 const TopbarMobile = () => {
   return (
     <div className='mb-5 mt-10 flex px-2.5'>
-      <div className='flex-grow'>
+      <div className='grow'>
         <SearchBox />
       </div>
 
-      <div className='ml-6 flex flex-shrink-0'>
+      <div className='ml-6 flex shrink-0'>
         <SettingsButton />
         <div className='ml-3'>
           <Avatar />

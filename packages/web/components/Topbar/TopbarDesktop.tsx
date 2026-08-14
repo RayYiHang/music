@@ -121,7 +121,7 @@ const Background = () => {
               >
                 <div
                   className={cx(
-                    'z-1 absolute h-full w-full',
+                    'absolute h-full w-full',
                     css`
                       background-color: rgba(0, 0, 0, 0.06);
                     `

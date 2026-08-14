@@ -49,7 +49,7 @@ const ArtistSongs = memo(() => {
   }
 
   return (
-    <div className='h-800 z-10'>
+    <div className='z-10'>
       <ScrollPagination getData={getData} renderItems={renderItems} />
     </div>
   )

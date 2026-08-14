@@ -119,7 +119,7 @@ const Slider = ({
       {/* Track */}
       <div
         className={cx(
-          'absolute overflow-hidden rounded-full bg-black/10 bg-opacity-10 dark:bg-white/10',
+          'absolute overflow-hidden rounded-full bg-black/10 dark:bg-white/10',
           orientation === 'horizontal' && 'h-[3px] w-full',
           orientation === 'vertical' && 'h-full w-[3px]'
         )}
@@ -138,7 +138,7 @@ const Slider = ({
       {/* Thumb */}
       <div
         className={cx(
-          'absolute flex h-2 w-2 items-center justify-center rounded-full bg-black bg-opacity-20 transition-opacity dark:bg-white',
+          'absolute flex h-2 w-2 items-center justify-center rounded-full bg-black/20 transition-opacity dark:bg-white',
           isDragging || alwaysShowThumb ? 'opacity-100' : 'opacity-0 group-hover:opacity-100',
           orientation === 'horizontal' && '-translate-x-1',
           orientation === 'vertical' && 'translate-y-1'

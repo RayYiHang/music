@@ -39,7 +39,7 @@ export function Select<T extends string>({
       <select
         onChange={e => onChange(e.target.value as T)}
         value={value}
-        className='h-full w-full appearance-none bg-transparent py-1 pr-7 pl-3 focus:outline-none'
+        className='h-full w-full appearance-none bg-transparent py-1 pr-7 pl-3 focus:outline-hidden'
       >
         {options.map(option => (
           <option key={option.value} value={option.value}>
@@ -50,7 +50,7 @@ export function Select<T extends string>({
 
       <Icon
         name='dropdown-triangle'
-        className='pointer-events-none absolute right-2.5 h-2.5 w-2.5 text-white/1 dark:text-black/1'
+        className='pointer-events-none absolute right-2.5 h-2.5 w-2.5'
         style={{ top: '11px' }}
       />
     </div>

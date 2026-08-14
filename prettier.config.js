@@ -12,7 +12,7 @@ module.exports = {
   jsxSingleQuote: true,
   printWidth: 100,
 
-  // Tailwind CSS
+  // Tailwind CSS v4 (CSS-first config; no tailwind.config.js anymore)
   plugins: [require('prettier-plugin-tailwindcss')],
-  tailwindConfig: './packages/web/tailwind.config.js',
+  tailwindStylesheet: './packages/web/styles/global.css',
 }

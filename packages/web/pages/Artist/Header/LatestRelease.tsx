@@ -33,7 +33,7 @@ const Album = ({ album }: { album?: Album }) => {
           `
         )}
       />
-      <div className='flex-shrink-1 ml-2'>
+      <div className='shrink-1 ml-2'>
         <div className='line-clamp-1 text-16 font-medium text-neutral-700 transition-colors duration-400 dark:text-neutral-300 '>
           {album.name}
         </div>
@@ -67,7 +67,7 @@ const Video = ({ video }: { video?: any }) => {
               `
             )}
           />
-          <div className='flex-shrink-1 ml-2'>
+          <div className='shrink-1 ml-2'>
             <div className='line-clamp-1 text-16 font-medium text-neutral-700 transition-colors duration-400 dark:text-neutral-300'>
               {video.name}
             </div>

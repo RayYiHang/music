@@ -17,9 +17,9 @@ const OR = ({ children, onClick }: { children: React.ReactNode; onClick: () => v
   return (
     <>
       <div className='mt-4 flex items-center'>
-        <div className='h-px flex-grow bg-white/20'></div>
+        <div className='h-px grow bg-white/20'></div>
         <div className='mx-2 text-16 font-medium text-white'>{t`auth.or`}</div>
-        <div className='h-px flex-grow bg-white/20'></div>
+        <div className='h-px grow bg-white/20'></div>
       </div>
 
       <div className='mt-4 flex justify-center'>

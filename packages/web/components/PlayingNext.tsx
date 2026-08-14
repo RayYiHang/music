@@ -176,14 +176,14 @@ const Track = memo(
         {/* Cover */}
         <img
           alt='Cover'
-          className='mr-4 aspect-square h-14 w-14 flex-shrink-0 rounded-12'
+          className='mr-4 aspect-square h-14 w-14 shrink-0 rounded-12'
           src={resizeImage(track?.al?.picUrl || '', 'sm')}
           loading='lazy'
           decoding='async'
         />
 
         {/* Track info */}
-        <div className='mr-3 flex-grow'>
+        <div className='mr-3 grow'>
           <div
             className={cx(
               'line-clamp-1 text-16 font-medium transition-colors duration-500',

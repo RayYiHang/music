@@ -47,7 +47,7 @@ const Lyrics = ({ tracksIDs }: { tracksIDs: number[] }) => {
       {lyricLines.map((line, index) => (
         <div
           key={`${index}-${line}`}
-          className='overflow-hidden overflow-ellipsis whitespace-nowrap text-18 font-medium'
+          className='overflow-hidden text-ellipsis whitespace-nowrap text-18 font-medium'
         >
           {line}
         </div>
@@ -59,7 +59,7 @@ const Lyrics = ({ tracksIDs }: { tracksIDs: number[] }) => {
 const Covers = memo(({ tracks }: { tracks: Track[] }) => {
   const navigate = useNavigate()
   return (
-    <div className='mt-6 grid w-full flex-shrink-0 grid-cols-3 gap-2.5 lg:mt-0 lg:ml-8 lg:w-auto'>
+    <div className='mt-6 grid w-full shrink-0 grid-cols-3 gap-2.5 lg:mt-0 lg:ml-8 lg:w-auto'>
       {tracks.map(track => (
         <Image
           src={resizeImage(track.al?.picUrl || '', 'md')}

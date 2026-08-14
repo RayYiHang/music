@@ -1,3 +1,199 @@
+@import 'tailwindcss';
+
+/* Tailwind v4 CSS-first port of the former tailwind.config.js.
+   Every token below reproduces the v3 computed values exactly — several
+   were tuned by hand for the frosted-glass layers (backdrop blur scale)
+   and must NOT drift to the v4 defaults (which renamed/reshuffled the
+   blur, radius and shadow scales). */
+
+/* darkMode: 'class' — the app toggles the `dark` class on <body>. */
+@custom-variant dark (&:where(.dark, .dark *));
+
+@theme {
+  /* fontFamily */
+  --font-barlow: Barlow;
+  --font-mono: 'Roboto Mono', ui-monospace;
+
+  /* fontSize: numeric scale, fixed line-height 1.2 / letter-spacing 0.02em */
+  --text-12: 0.75rem;
+  --text-12--line-height: 1.2;
+  --text-12--letter-spacing: 0.02em;
+  --text-14: 0.875rem;
+  --text-14--line-height: 1.2;
+  --text-14--letter-spacing: 0.02em;
+  --text-16: 1rem;
+  --text-16--line-height: 1.2;
+  --text-16--letter-spacing: 0.02em;
+  --text-18: 1.125rem;
+  --text-18--line-height: 1.2;
+  --text-18--letter-spacing: 0.02em;
+  --text-21: 1.312rem;
+  --text-21--line-height: 1.2;
+  --text-21--letter-spacing: 0.02em;
+  --text-24: 1.5rem;
+  --text-24--line-height: 1.2;
+  --text-24--letter-spacing: 0.02em;
+  --text-28: 1.75rem;
+  --text-28--line-height: 1.2;
+  --text-28--letter-spacing: 0.02em;
+  --text-32: 2rem;
+  --text-32--line-height: 1.2;
+  --text-32--letter-spacing: 0.02em;
+  --text-36: 2.25rem;
+  --text-36--line-height: 1.2;
+  --text-36--letter-spacing: 0.02em;
+  --text-42: 2.625rem;
+  --text-42--line-height: 1.2;
+  --text-42--letter-spacing: 0.02em;
+  --text-48: 3rem;
+  --text-48--line-height: 1.2;
+  --text-48--letter-spacing: 0.02em;
+  --text-55: 3.438rem;
+  --text-55--line-height: 1.2;
+  --text-55--letter-spacing: 0.02em;
+  --text-63: 3.938rem;
+  --text-63--line-height: 1.2;
+  --text-63--letter-spacing: 0.02em;
+  --text-72: 4.5rem;
+  --text-72--line-height: 1.2;
+  --text-72--letter-spacing: 0.02em;
+  --text-82: 5.125rem;
+  --text-82--line-height: 1.2;
+  --text-82--letter-spacing: 0.02em;
+
+  /* borderRadius: `--radius` (bare) restores the v3 DEFAULT (bare `rounded`
+     class = 0.25rem; v4 renamed it rounded-sm), `--radius-sm` is pinned back
+     to v3's 0.125rem (v4 renamed it rounded-xs) */
+  --radius: 0.25rem;
+  --radius-sm: 0.125rem;
+  --radius-12: 12px;
+  --radius-20: 20px;
+  --radius-24: 24px;
+  --radius-48: 48px;
+
+  /* blur (filter): `--blur` (bare) restores the v3 DEFAULT (bare `blur`
+     class = 8px; v4 renamed it blur-sm), and v3 blur-sm = 4px is pinned
+     (v4 renamed it blur-xs) */
+  --blur: 8px;
+  --blur-sm: 4px;
+  --blur-lyric: 1px;
+
+  /* backdropBlur — the app's custom tuned frosted-glass scale.
+     `--backdrop-blur` (bare token) restores the v3 scale DEFAULT so the
+     bare `backdrop-blur` class keeps resolving to 4px. */
+  --backdrop-blur: 4px;
+  --backdrop-blur-sm: 2px;
+  --backdrop-blur-md: 6px;
+  --backdrop-blur-lg: 8px;
+  --backdrop-blur-xl: 12px;
+  --backdrop-blur-2xl: 20px;
+  --backdrop-blur-3xl: 45px;
+  --backdrop-blur-4xl: 60px;
+  --backdrop-blur-sxl: 64px;
+  --backdrop-blur-mxl: 128px;
+  --backdrop-blur-xxl: 256px;
+
+  /* boxShadow: keep v3 `shadow-sm` (v4 renamed it shadow-xs) */
+  --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+
+  /* letterSpacing / lineHeight extras */
+  --tracking-lyricSpacing: 0.96px;
+  --tracking-hilightLyric: 1.1px;
+  --leading-lyric: 120%;
+
+  /* colors — brand (static lime-ish palette) */
+  --color-brand-50: #fcfff5;
+  --color-brand-100: #ecfec1;
+  --color-brand-200: #dcfb8f;
+  --color-brand-300: #cdf764;
+  --color-brand-400: #bff142;
+  --color-brand-500: #b2e928;
+  --color-brand-600: #a5de16;
+  --color-brand-700: #98d00b;
+  --color-brand-800: #8bc003;
+  --color-brand-900: #7eb000;
+
+  /* colors — day (light surfaces) */
+  --color-day-50: #b6b6b6;
+  --color-day-100: #535353;
+  --color-day-200: #505050;
+  --color-day-300: #484848;
+  --color-day-400: #383838;
+  --color-day-500: #1f1f1f;
+  --color-day-600: #0e0e0e;
+  --color-day-700: #060606;
+  --color-day-800: #020202;
+
+  /* colors — night (dark surfaces) */
+  --color-night-50: #bfbfbf;
+  --color-night-100: #a8a8a8;
+  --color-night-200: #7b7b7b;
+  --color-night-300: #606060;
+  --color-night-400: #585858;
+  --color-night-500: #4a4a4a;
+  --color-night-600: #464646;
+  --color-night-700: #3f3f3f;
+  --color-night-800: #373737;
+  --color-night-900: #313131;
+
+  /* colors — neutral: v3 replaced the whole namespace (100–800 only) */
+  --color-neutral-*: initial;
+  --color-neutral-100: #e3e3e3;
+  --color-neutral-200: #c6c6c6;
+  --color-neutral-300: #aaaaaa;
+  --color-neutral-400: #8e8e8e;
+  --color-neutral-500: #717171;
+  --color-neutral-600: #555555;
+  --color-neutral-700: #393939;
+  --color-neutral-800: #1c1c1c;
+
+  /* colors — gray: v3 replaced the whole namespace with near-black */
+  --color-gray-*: initial;
+  --color-gray-50: #14161a;
+  --color-gray-100: #14161a;
+  --color-gray-200: #14161a;
+  --color-gray-300: #14161a;
+  --color-gray-400: #14161a;
+  --color-gray-500: #14161a;
+  --color-gray-600: #14161a;
+  --color-gray-700: #14161a;
+  --color-gray-800: #14161a;
+  --color-gray-900: #0d0e10;
+
+  /* colors — the handful of stock-palette shades the UI actually uses,
+     pinned to the v3 hex values. v4 re-derived the stock palette in oklch
+     and several shades render measurably different (blue-500 v3 #3b82f6 →
+     v4 ≈#2b7fff), which would skew the accent-color swatches in Settings. */
+  --color-blue-500: #3b82f6;
+  --color-cyan-500: #06b6d4;
+  --color-emerald-500: #10b981;
+  --color-fuchsia-500: #d946ef;
+  --color-green-500: #22c55e;
+  --color-indigo-500: #6366f1;
+  --color-lime-500: #84cc16;
+  --color-orange-500: #f97316;
+  --color-pink-500: #ec4899;
+  --color-purple-500: #a855f7;
+  --color-red-200: #fecaca;
+  --color-red-500: #ef4444;
+  --color-rose-500: #f43f5e;
+  --color-sky-500: #0ea5e9;
+  --color-teal-500: #14b8a6;
+  --color-violet-500: #8b5cf6;
+  --color-yellow-500: #eab308;
+  --color-amber-500: #f59e0b;
+  --color-stone-50: #fafaf9;
+  --color-stone-100: #f5f5f4;
+  --color-stone-400: #a8a29e;
+  --color-stone-500: #78716c;
+  --color-stone-600: #57534e;
+  --color-stone-700: #44403c;
+}
+
+/* v3 scale "DEFAULT" classes (bare `rounded` / `blur` / `backdrop-blur`) are
+   used across the codebase; their values are pinned via the bare
+   `--radius` / `--blur` / `--backdrop-blur` @theme tokens above. */
+
 /* Roboto self-hosted variable font (wght 100..900), replacing the old
    render-blocking Google Fonts @import. Latin subsets only — CJK text
    falls through to PingFang SC / Microsoft YaHei in the body stack
@@ -24,10 +220,6 @@
     U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113,
     U+2C60-2C7F, U+A720-A7FF;
 }
-
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
 
 @layer components {
   .app-region-drag {
@@ -170,37 +362,52 @@
     url('@/web/assets/fonts/Barlow-Black.ttf') format('truetype');
 }
 
-body,
-input {
-  font-family: Roboto, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, Helvetica Neue,
-    PingFang SC, Microsoft YaHei, Source Han Sans SC, Noto Sans CJK SC, WenQuanYi Micro Hei,
-    microsoft uighur, sans-serif;
-}
+/* Element-level resets live in the base layer (they did not in v3, but v3
+   resolved the same outcomes through source order + specificity: utilities
+   always won over these element selectors). With v4's cascade layers an
+   unlayered element rule would BEAT layered utilities (e.g. `cursor-pointer`,
+   `font-mono`), so keeping them in `base` preserves the v3 cascade. */
+@layer base {
+  body,
+  input {
+    font-family: Roboto, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, Helvetica Neue,
+      PingFang SC, Microsoft YaHei, Source Han Sans SC, Noto Sans CJK SC, WenQuanYi Micro Hei,
+      microsoft uighur, sans-serif;
+  }
 
-body {
-  border-radius: 12px;
-  @apply overscroll-contain;
-}
+  body {
+    border-radius: 12px;
+    @apply overscroll-contain;
+  }
 
-html {
-  @apply bg-transparent;
-  min-height: calc(100% + env(safe-area-inset-top));
-}
+  html {
+    @apply bg-transparent;
+    min-height: calc(100% + env(safe-area-inset-top));
+  }
 
-button,
-input {
-  @apply outline-none;
-}
+  /* v3 preflight painted placeholders with theme(colors.gray.400), which this
+     app's config overrode to #14161A. v4's preflight instead uses
+     color-mix(currentcolor 50%) — restore the v3 value. */
+  ::placeholder {
+    color: #14161a;
+    opacity: 1;
+  }
 
-*::selection {
-  @apply bg-brand-500 text-neutral-800;
-}
+  button,
+  input {
+    @apply outline-hidden;
+  }
 
-a,
-button,
-p,
-div {
-  @apply cursor-default;
+  *::selection {
+    @apply bg-brand-500 text-neutral-800;
+  }
+
+  a,
+  button,
+  p,
+  div {
+    @apply cursor-default;
+  }
 }
 
 img,

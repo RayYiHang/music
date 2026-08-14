@@ -201,7 +201,7 @@ const SearchBox = () => {
           ref={inputRef}
           placeholder={t`search.search`.toString()}
           className={cx(
-            'flex-shrink bg-transparent font-medium placeholder-black/60 outline-none dark:placeholder-white/60',
+            'shrink bg-transparent font-medium placeholder-black/60 outline-hidden dark:placeholder-white/60',
             css`
               @media (max-width: 420px) {
                 width: 142px;

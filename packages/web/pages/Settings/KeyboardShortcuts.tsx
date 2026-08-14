@@ -202,7 +202,7 @@ const ShortcutBindingInput: FC<{
 
   return (
     <div
-      className='group/binding-input mx-2 flex items-center gap-2 rounded-lg bg-stone-400/20 py-1 px-3 font-mono outline-none backdrop-blur'
+      className='group/binding-input mx-2 flex items-center gap-2 rounded-lg bg-stone-400/20 py-1 px-3 font-mono outline-hidden backdrop-blur'
       onClick={startBinding}
       onKeyDown={onKeyDown}
       onBlur={onBlur}
