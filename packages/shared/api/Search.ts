@@ -71,10 +71,18 @@ export interface SearchResponse {
 export interface CloudSearchResponse {
   code: number
   result: {
-    songCound?: number
+    // type=1 (Single)
+    songCount?: number
     songs?: Track[]
-    playlistCount: number
-    playlists: Playlist[]
+    // type=10 (Album)
+    albumCount?: number
+    albums?: Album[]
+    // type=100 (Artist)
+    artistCount?: number
+    artists?: Artist[]
+    // type=1000 (Playlist)
+    playlistCount?: number
+    playlists?: Playlist[]
   }
 }
 
@@ -85,11 +93,11 @@ export interface MultiMatchSearchParams {
 export interface MultiMatchSearchResponse {
   code: number
   result: {
-    album: Album[]
-    artist: Artist[]
-    playlist: Playlist[]
+    album?: Album[]
+    artist?: Artist[]
+    playlist?: Playlist[]
     orpheus: unknown
-    orders: Array<'artist' | 'album'>
+    orders?: Array<'artist' | 'album'>
   }
 }
 

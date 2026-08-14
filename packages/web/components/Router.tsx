@@ -1,4 +1,12 @@
-import { Route, Routes, useLocation, useNavigate } from 'react-router-dom'
+import {
+  generatePath,
+  Navigate,
+  Route,
+  Routes,
+  useLocation,
+  useNavigate,
+  useParams,
+} from 'react-router-dom'
 import { AnimatePresence } from 'framer-motion'
 import React, { lazy, Suspense, startTransition, useEffect } from 'react'
 import VideoPlayer from './VideoPlayer'
@@ -15,6 +23,14 @@ const Lyrics = lazy(() => import('@/web/pages/Lyrics/Lyrics'))
 const LyricsDesktop = lazy(() => import('@/web/pages/Lyrics/LyricsDesktop'))
 const Search = lazy(() => import('@/web/pages/Search'))
 const Settings = lazy(() => import('@/web/pages/Settings'))
+
+// Legacy typed-search URLs (/search/:keywords/:type) redirect to the
+// unified search page. `Navigate to` does not interpolate :params in
+// react-router v6, so rebuild the path from the matched params.
+const SearchTypeRedirect = () => {
+  const { keywords = '' } = useParams()
+  return <Navigate to={generatePath('/search/:keywords', { keywords })} replace />
+}
 
 const Router = () => {
   const location = useLocation()
@@ -41,9 +57,8 @@ const Router = () => {
           <Route path='/settings' element={<Settings />} />
           <Route path='/lyrics' element={<Lyrics />} />
           <Route path='/desktoplyrics' element={<LyricsDesktop />} />
-          <Route path='/search/:keywords' element={<Search />}>
-            <Route path=':type' element={<Search />} />
-          </Route>
+          <Route path='/search/:keywords' element={<Search />} />
+          <Route path='/search/:keywords/:type' element={<SearchTypeRedirect />} />
         </Routes>
       </Suspense>
     </AnimatePresence>
