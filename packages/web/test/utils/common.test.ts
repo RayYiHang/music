@@ -24,9 +24,9 @@ test('resizeImage', () => {
   expect(resizeImage('https://test.com/test.jpg', 'lg')).toBe(
     'https://test.com/test.jpg?param=1024y1024'
   )
-  // test http => https
-  expect(resizeImage('http://test.com/test.jpg', 'xs')).toBe(
-    'https://test.com/test.jpg?param=128y128'
+  // test http => https on the NetEase CDN (scheme + host normalization to p1)
+  expect(resizeImage('http://p3.music.126.net/test.jpg', 'xs')).toBe(
+    'https://p1.music.126.net/test.jpg?param=128y128'
   )
   expect(resizeImage('', 'xs')).toBe('')
 })

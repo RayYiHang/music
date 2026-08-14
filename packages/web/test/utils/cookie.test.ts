@@ -86,6 +86,9 @@ describe('setCookies', () => {
 
   afterEach(() => {
     removeAllCookies()
+    // vitest 4 returns the same spy for repeated vi.spyOn calls,
+    // so reset it here to keep call counts scoped to each test
+    vi.restoreAllMocks()
   })
 
   test('set one cookie', () => {

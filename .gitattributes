@@ -5,3 +5,9 @@
 *.mp3 binary
 *.icns binary
 *.gif binary
+# Fonts are binary; without this, `* text eol=lf` mangles any woff2/ttf
+# that happens to contain 0D 0A byte pairs (corrupts the font on commit).
+*.woff2 binary
+*.woff binary
+*.ttf binary
+*.otf binary

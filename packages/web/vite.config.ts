@@ -1,11 +1,12 @@
-/// <reference types="vitest" />
 import react from '@vitejs/plugin-react-swc'
 import dotenv from 'dotenv'
 import { join } from 'path'
-import { PluginOption, defineConfig } from 'vite'
+import { PluginOption } from 'vite'
 import { createSvgIconsPlugin } from 'vite-plugin-svg-icons'
 import { visualizer } from 'rollup-plugin-visualizer'
 import { VitePWA } from 'vite-plugin-pwa'
+// defineConfig from vitest/config = vite's defineConfig + `test` typing (vitest 4+)
+import { defineConfig } from 'vitest/config'
 import filenamesToType from './vitePluginFilenamesToType'
 import { appName } from './utils/const'
 
@@ -84,7 +85,9 @@ export default defineConfig({
     }),
   ],
   build: {
-    target: IS_ELECTRON ? 'esnext' : 'modules',
+    // 'modules' alias was removed in vite 7; 'es2020' is its equivalent
+    // (chrome87 / firefox78 / safari14 — browsers with native ESM support).
+    target: IS_ELECTRON ? 'esnext' : 'es2020',
     sourcemap: true,
     outDir: './dist',
     emptyOutDir: true,
