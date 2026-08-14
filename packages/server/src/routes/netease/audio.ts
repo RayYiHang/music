@@ -1,7 +1,7 @@
 import { FastifyInstance, FastifyRequest } from 'fastify'
 import NeteaseCloudMusicApi, { SoundQualityType } from '@neteasecloudmusicapienhanced/api'
 import log from '../../utils/log'
-import cache from '../../utils/cache'
+import cache, { AUDIO_CACHE_DIR } from '../../utils/cache'
 import { CacheAPIs } from '../../../../shared/CacheAPIs'
 import fs from 'fs'
 import { db, Tables } from '../../utils/db'
@@ -17,19 +17,24 @@ export const getAudioFromCache = async (id: number) => {
 
   const audioFileName = `${audioCache.id}-${audioCache.bitRate}.${audioCache.format}`
 
-  const isAudioFileExists = fs.existsSync(`${pkg.name}/audio_cache/${audioFileName}`)
+  const isAudioFileExists = fs.existsSync(`${AUDIO_CACHE_DIR}/${audioFileName}`)
   if (!isAudioFileExists) return
 
   log.debug(`[server] Audio cache hit ${id}`)
+
+  // 桌面端（Electron 内）返回本地服务器地址；独立部署时返回同源相对路径，交给反向代理转发
+  const audioURL = process.versions.electron
+    ? `http://127.0.0.1:${
+        process.env.ELECTRON_WEB_SERVER_PORT
+      }/${pkg.name.toLowerCase()}/audio/${audioFileName}`
+    : `/${pkg.name.toLowerCase()}/audio/${audioFileName}`
 
   return {
     data: [
       {
         source: audioCache.source,
         id: audioCache.id,
-        url: `http://127.0.0.1:${
-          process.env.ELECTRON_WEB_SERVER_PORT
-        }/${pkg.name.toLowerCase()}/audio/${audioFileName}`,
+        url: audioURL,
         br: audioCache.bitRate,
         size: 0,
         md5: '',
@@ -123,20 +128,6 @@ export const getAudioFromCache = async (id: number) => {
 //     log.error('getAudioFromYouTube error', id, e)
 //   }
 // }
-function stringifyCookie(cookies: string | string[] | undefined) {
-  if (!cookies) return
-  var result = ''
-  for (var i = 0; i < cookies.length; i++) {
-    var cookie = cookies[i]
-    var separatorIndex = cookie.indexOf('=')
-    var name = cookie.substring(0, separatorIndex)
-    var value = cookie.substring(separatorIndex + 1)
-    result += name + '=' + value + '; '
-  }
-
-  return result
-}
-
 async function audio(fastify: FastifyInstance) {
   // 劫持网易云的song/url api，将url替换成缓存的音频文件url
   fastify.get(
@@ -166,10 +157,16 @@ async function audio(fastify: FastifyInstance) {
         return localCache
       }
 
-      const { body: fromNetease }: { body: any } = await NeteaseCloudMusicApi.song_url_v1({
-        ...req.query,
-        cookie: stringifyCookie(req.headers.cookies),
-      })
+      let fromNetease: any
+      try {
+        const { body }: { body: any } = await NeteaseCloudMusicApi.song_url_v1({
+          ...req.query,
+          cookie: (req as any).cookies,
+        })
+        fromNetease = body
+      } catch (error) {
+        log.error('[audio] song_url_v1 request failed', error)
+      }
       if (
         fromNetease?.code === 200 &&
         !fromNetease?.data?.[0]?.freeTrialInfo &&
@@ -192,40 +189,46 @@ async function audio(fastify: FastifyInstance) {
         })
         return
       }
-      process.env.QQ_COOKIE = req.query.qqCookie
-      process.env.MIGU_COOKIE = req.query.miguCookie
-      process.env.JOOX_COOKIE = req.query.jooxCookie
+      // 仅在确实传入时写入，避免写入字面量 "undefined" 覆盖有效配置
+      if (req.query.qqCookie) process.env.QQ_COOKIE = req.query.qqCookie
+      if (req.query.miguCookie) process.env.MIGU_COOKIE = req.query.miguCookie
+      if (req.query.jooxCookie) process.env.JOOX_COOKIE = req.query.jooxCookie
       process.env.ENABLE_FLAC = 'true'
       process.env.ENABLE_LOCAL_VIP = 'true'
       try {
         // todo: 暂时写死的，是否开放给用户配置
-        await match(trackID, ['qq', 'pyncmd', 'bodian', 'migu', 'youtube']).then(
-          (data: unknown) => {
-            if (data === null || data === undefined || (data as any)?.url === '') {
-              reply.code(500).send({
-                code: 400,
-                msg: 'no track info',
-              })
-              return
+        const data: any = await match(trackID, ['qq', 'pyncmd', 'bodian', 'migu', 'youtube'])
+        if (data === null || data === undefined || data?.url === '') {
+          // 是试听歌曲就把url删掉
+          if (fromNetease?.data?.[0]?.freeTrialInfo) {
+            fromNetease.data[0].url = ''
+          }
+          return reply.status(fromNetease?.code ?? 500).send(
+            fromNetease ?? {
+              code: 500,
+              message: 'no track info',
             }
+          )
+        }
 
-            cache.set(CacheAPIs.Unblock, { id: trackID, url: (data as any)?.url }, trackID)
-            reply.code(200).send({
-              code: 200,
-              data: [data],
-            })
+        cache.set(CacheAPIs.Unblock, { id: trackID, url: data?.url }, trackID)
+        return reply.code(200).send({
+          code: 200,
+          data: [data],
+        })
+      } catch (err) {
+        log.error('[audio] unblock match failed', err)
+        // 是试听歌曲就把url删掉
+        if (fromNetease?.data?.[0]?.freeTrialInfo) {
+          fromNetease.data[0].url = ''
+        }
+        return reply.status(fromNetease?.code ?? 500).send(
+          fromNetease ?? {
+            code: 500,
+            message: String(err),
           }
         )
-      } catch (err) {
-        reply.code(500).send(err)
       }
-
-      // 是试听歌曲就把url删掉
-      if (fromNetease?.data?.[0].freeTrialInfo) {
-        fromNetease.data[0].url = ''
-      }
-
-      reply.status(fromNetease?.code ?? 500).send(fromNetease)
     }
   )
 

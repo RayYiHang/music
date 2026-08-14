@@ -312,7 +312,7 @@ class Cache {
     }
 
     const meta = await musicMetadata.parseBuffer(buffer)
-    const bitRate = meta?.format?.codec === 'OPUS' ? 165000 : meta.format.bitrate ?? 0
+    const bitRate = meta?.format?.codec === 'OPUS' ? 165000 : meta?.format?.bitrate ?? 0
     const type =
       {
         'MPEG 1 Layer 3': 'mp3',
@@ -320,7 +320,7 @@ class Cache {
         AAC: 'm4a',
         FLAC: 'flac',
         OPUS: 'opus',
-      }[meta.format.codec ?? ''] ?? 'unknown'
+      }[meta?.format?.codec ?? ''] ?? 'unknown'
 
     let source: TablesStructures[Tables.Audio]['source'] = 'unknown'
     if (url.includes('googlevideo.com')) source = 'youtube'

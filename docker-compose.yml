@@ -1,18 +1,43 @@
-version: '3'
 services:
   frontend:
     restart: always
-    image: sherlockouo/xtify-music-web:latest
+    build:
+      context: .
+      dockerfile: Dockerfile.web
+    image: xtify-music-web:latest
     ports:
       - 2222:80
+    depends_on:
+      - backend
     networks:
       - mynetwork
   backend:
     restart: always
-    image: sherlockouo/xtify-music-server:latest
-    ports:
-      - 35530:35530
+    build:
+      context: .
+      dockerfile: Dockerfile.server
+    image: xtify-music-server:latest
+    # 35530 stays internal to the compose network; the frontend proxies it
+    expose:
+      - '35530'
+    environment:
+      NODE_ENV: production
+      DATA_DIR: /app/data
+      DATABASE_URL: 'file:/app/data/musicInfo.db'
+      APPLE_MUSIC_TOKEN: ${APPLE_MUSIC_TOKEN:-}
+    volumes:
+      - server-data:/app/data
+    healthcheck:
+      test: ['CMD', 'wget', '-q', '--spider', 'http://127.0.0.1:35530/']
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 20s
     networks:
       - mynetwork
+
+volumes:
+  server-data:
+
 networks:
   mynetwork:

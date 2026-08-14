@@ -1,40 +1,68 @@
-# Dockerfile.builder for building the web (React) project
-FROM node:20.0.0 AS builder
+# R3PLAYX standalone backend (Fastify server) image
+FROM node:22-alpine AS build
+
+# better-sqlite3 needs a native toolchain
+RUN apk add --no-cache python3 make g++
+ENV COREPACK_NPM_REGISTRY=https://registry.npmmirror.com
+RUN corepack enable && corepack prepare pnpm@8.6.12 --activate
+RUN pnpm config set registry https://registry.npmmirror.com
+
+WORKDIR /repo
+
+# Manifests first for better layer caching (desktop manifest only keeps pnpm
+# workspace resolution happy; it is filtered out of the install)
+COPY pnpm-workspace.yaml pnpm-lock.yaml package.json ./
+COPY packages/server/package.json packages/server/
+COPY packages/web/package.json packages/web/
+COPY packages/desktop/package.json packages/desktop/
+COPY packages/server/prisma packages/server/prisma
+# --ignore-scripts: the root `install` lifecycle script (turbo run
+# post-install) would fail here — turbo is not installed under a filtered
+# install. The server postinstall (prisma generate) is rerun explicitly
+# below so @prisma/client types exist before tsc.
+RUN pnpm install --frozen-lockfile=false --filter server --ignore-scripts
+RUN pnpm --filter server exec prisma generate
+
+# Server sources + shared sources (the server tsconfig compiles ../shared too)
+COPY packages/shared packages/shared
+COPY packages/server/src packages/server/src
+RUN pnpm --filter server run build
+
+FROM node:22-alpine AS runtime
+
+RUN apk add --no-cache python3 make g++ wget tini openssl
+RUN npm config set registry https://registry.npmmirror.com \
+  && npm i -g fastify-cli@4 prisma@5.22.0
 
 ENV NODE_ENV=production \
-  ELECTRON_WEB_SERVER_PORT=42710 \
-  ELECTRON_DEV_NETEASE_API_PORT=30001 \
-  UNBLOCK_SERVER_PORT=30003 \
-  VITE_APP_NETEASE_API_URL=/netease
+    DATA_DIR=/app/data \
+    DATABASE_URL="file:/app/data/musicInfo.db"
 
-# Set registry for npm
-RUN npm config set registry https://registry.npmmirror.com/
-RUN pnpm config set registry https://registry.npmmirror.com/
+WORKDIR /app/packages/server
+COPY --from=build /repo/packages/server/dist ./dist
+COPY --from=build /repo/packages/server/prisma ./prisma
+COPY --from=build /repo/packages/server/package.json ./
+# Lockfile alongside the manifest so the prod install resolves to locked
+# versions instead of re-resolving from semver ranges
+COPY --from=build /repo/pnpm-lock.yaml ./
 
-# Install global dependencies
-RUN npm i -g pnpm prisma fastify-cli turbo tsx
+ENV COREPACK_NPM_REGISTRY=https://registry.npmmirror.com
+RUN corepack enable && corepack prepare pnpm@8.6.12 --activate
+RUN pnpm config set registry https://registry.npmmirror.com
+# Prod-only install; @prisma/client is a runtime dependency, and the postinstall
+# `prisma generate` uses the globally pinned prisma CLI (matches schema v5)
+RUN pnpm install --frozen-lockfile=false --prod
+# pnpm.neverBuiltDependencies (root package.json) skips better-sqlite3's
+# native build during install; force it so the sqlite cache works. The
+# python/make/g++ toolchain is already present in this image.
+RUN npm rebuild better-sqlite3
+RUN prisma generate --schema prisma/schema.prisma
 
-# Copy package.json and install dependencies for the main app
-COPY package.json /app/
-WORKDIR /app
-RUN pnpm i
-RUN pnpm prune --prod
-
-
-# Copy package.json and install dependencies for the server
-# Copy the built server code
-COPY packages/server/dist /app/
-COPY packages/server/prisma /app/packages/server/prisma/
-COPY packages/server/package.json /app/packages/server/
-WORKDIR /app/packages/server/
-RUN pnpm i
-RUN pnpm prune --prod
-
-
-# WORKDIR /app/
-# RUN prisma generate
-# Generate Prisma client
-WORKDIR /app/packages/
+VOLUME /app/data
 EXPOSE 35530
-# Start the server
-CMD ["sh", "-c", "fastify start --port 35530 --address 0.0.0.0 -l info server/src/app.js"]
+
+HEALTHCHECK --interval=30s --timeout=5s --start-period=20s --retries=3 \
+  CMD wget -qO- http://127.0.0.1:35530/ || exit 1
+
+ENTRYPOINT ["/sbin/tini", "--"]
+CMD ["fastify", "start", "--port", "35530", "--address", "0.0.0.0", "-l", "info", "dist/packages/server/src/app.js"]

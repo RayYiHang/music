@@ -10,7 +10,12 @@ declare module 'fastify' {
 }
 
 const prismaPlugin: FastifyPluginAsync = fp(async (server, options) => {
-  const prisma = new PrismaClient()
+  // schema.prisma 通过 env("DATABASE_URL") 读取连接串：容器/部署环境会显式
+  // 设置；本地 dev 没有 dotenv，回退到旧版 schema 硬编码 url 的同一位置
+  // （引擎按 schema 目录解析相对路径 → packages/server/prisma/musicInfo.db）
+  const prisma = new PrismaClient({
+    datasourceUrl: process.env.DATABASE_URL ?? 'file:./musicInfo.db',
+  })
 
   await prisma.$connect()
 

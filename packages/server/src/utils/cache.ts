@@ -6,8 +6,12 @@ import { IAudioMetadata } from 'music-metadata'
 import { CacheAPIs, CacheAPIsParams } from '../../../shared/CacheAPIs'
 import { FastifyReply } from 'fastify'
 import { dirname } from './utils'
+import path from 'path'
 
 log.info('[electron] cache.ts')
+
+// 读写共用同一个音频缓存目录，避免写入与读取路径不一致导致缓存永远未命中
+export const AUDIO_CACHE_DIR = path.join(process.env.DATA_DIR || dirname, 'audio_cache')
 
 class Cache {
   constructor() {
@@ -266,14 +270,19 @@ class Cache {
     if (!fileName) {
       return reply.status(400).send({ error: 'No filename provided' })
     }
+    // setAudio 只会写入 `${id}-${bitRate}.${type}`（type 取值见其 codec 映射）；
+    // filename 来自路由参数，必须先校验，防止 `..%2F` 之类的路径穿越
+    if (!/^\d+-\d+\.(mp3|flac|m4a|ogg|opus|unknown)$/.test(fileName)) {
+      return reply.status(400).send({ error: 'Invalid filename' })
+    }
     const id = Number(fileName.split('-')[0])
 
     try {
-      const path = `${dirname}/audio_cache/${fileName}`
-      const audio = fs.readFileSync(path)
+      const filePath = `${AUDIO_CACHE_DIR}/${fileName}`
+      const audio = fs.readFileSync(filePath)
       if (audio.byteLength === 0) {
         db.delete(Tables.Audio, id)
-        fs.unlinkSync(path)
+        fs.unlinkSync(filePath)
         return reply.status(404).send({ error: 'Audio not found' })
       }
       db.update(Tables.Audio, id, { queriedAt: Date.now() })
@@ -292,21 +301,19 @@ class Cache {
     buffer: Buffer,
     { id, url, bitrate }: { id: number; url: string; bitrate: number }
   ) {
-    const path = `${dirname}/audio_cache`
-
     try {
-      fs.statSync(path)
+      fs.statSync(AUDIO_CACHE_DIR)
     } catch (e) {
-      fs.mkdirSync(path)
+      fs.mkdirSync(AUDIO_CACHE_DIR, { recursive: true })
     }
-    let meta!: IAudioMetadata
-    ;(async () => {
-      const { parseBuffer } = await import('music-metadata')
-      await parseBuffer(buffer).then(res => {
-        meta = res
-      })
-    })()
-    const bitRate = meta?.format?.codec === 'OPUS' ? 165000 : meta.format.bitrate ?? 0
+    const { parseBuffer } = await import('music-metadata')
+    let meta: IAudioMetadata | undefined
+    try {
+      meta = await parseBuffer(buffer)
+    } catch (e) {
+      log.error('[cache] parse audio metadata failed', e)
+    }
+    const bitRate = meta?.format?.codec === 'OPUS' ? 165000 : meta?.format?.bitrate ?? 0
     const type =
       {
         'MPEG 1 Layer 3': 'mp3',
@@ -314,13 +321,13 @@ class Cache {
         AAC: 'm4a',
         FLAC: 'flac',
         OPUS: 'opus',
-      }[meta.format.codec ?? ''] ?? 'unknown'
+      }[meta?.format?.codec ?? ''] ?? 'unknown'
 
     let source: TablesStructures[Tables.Audio]['source'] = 'unknown'
     if (url.includes('googlevideo.com')) source = 'youtube'
     if (url.includes('126.net')) source = 'netease'
 
-    fs.writeFile(`${path}/${id}-${bitRate}.${type}`, buffer, error => {
+    fs.writeFile(`${AUDIO_CACHE_DIR}/${id}-${bitRate}.${type}`, buffer, error => {
       if (error) {
         return log.error(`[cache] cacheAudio failed: ${error}`)
       }

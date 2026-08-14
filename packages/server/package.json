@@ -6,7 +6,7 @@
   "scripts": {
     "postinstall": "prisma generate",
     "start": "fastify start --port 35530 --address 0.0.0.0 -l info dist/packages/server/src/app.js",
-    "build": "tsc",
+    "build": "tsc && cp -r src/migrations dist/packages/server/src/",
     "watch": "tsc -w",
     "dev": "npm run build && concurrently -k -p \"[{name}]\" -n \"TypeScript,App\" -c \"yellow.bold,cyan.bold\" \"npm:watch\" \"npm:dev:start\"",
     "dev:start": "fastify start --port 35530 --address 0.0.0.0 -l info dist/packages/server/src/app.js"
@@ -17,31 +17,29 @@
   "dependencies": {
     "@fastify/autoload": "^5.10.0",
     "@fastify/cookie": "^8.3.0",
+    "@fastify/multipart": "^7.7.3",
     "@fastify/sensible": "^4.1.0",
     "@fastify/static": "^6.12.0",
-    "@fastify/swagger": "^8.15.0",
-    "@neteasecloudmusicapienhanced/api": "^4.31.0",
-    "@unblockneteasemusic/server": "^0.27.10",
-    "axios": "^0.27.2",
+    "@neteasecloudmusicapienhanced/api": "^4.40.0",
+    "@prisma/client": "^5.22.0",
+    "@unblockneteasemusic/server": "^0.28.0",
+    "axios": "^1.19.0",
     "better-sqlite3": "9.2.2",
     "change-case": "^4.1.2",
     "compare-versions": "^4.1.4",
     "fastify": "^4.29.1",
     "fastify-cli": "^4.4.0",
-    "fastify-cors": "^6.1.0",
     "fastify-plugin": "^3.0.1",
-    "music-metadata": "^8.3.0",
-    "picocolors": "^1.1.1"
+    "log4js": "^6.9.1",
+    "music-metadata": "^8.3.0"
   },
   "devDependencies": {
-    "@prisma/client": "^5.22.0",
     "@types/node": "^18.19.130",
     "concurrently": "^7.6.0",
     "esbuild": "^0.16.17",
     "fastify-tsconfig": "^1.0.1",
     "prisma": "^5.22.0",
     "ts-node": "^10.9.2",
-    "typescript": "^5.9.3",
-    "vite": "^4.5.14"
+    "typescript": "^5.9.3"
   }
 }

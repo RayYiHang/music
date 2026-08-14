@@ -1,4 +1,10 @@
-import axios, { AxiosError, AxiosInstance, AxiosRequestConfig, AxiosResponse } from 'axios'
+import axios, {
+  AxiosError,
+  AxiosInstance,
+  AxiosRequestConfig,
+  AxiosResponse,
+  InternalAxiosRequestConfig,
+} from 'axios'
 
 export const baseURL = 'https://amp-api.music.apple.com/v1/catalog/cn'
 
@@ -27,8 +33,11 @@ const service: AxiosInstance = axios.create({
   timeout: 15000,
 })
 
-service.interceptors.request.use((config: AxiosRequestConfig) => {
-  config.headers = { ...headers, ...config.headers }
+service.interceptors.request.use((config: InternalAxiosRequestConfig) => {
+  // axios >= 1.x: request interceptors receive InternalAxiosRequestConfig whose
+  // headers are an AxiosHeaders instance; spreading flattens it back to a plain
+  // object, so cast the merged result to keep the pre-1.x merge behavior.
+  config.headers = { ...headers, ...config.headers } as unknown as typeof config.headers
   config.params = { ...params, ...config.params }
   return config
 })

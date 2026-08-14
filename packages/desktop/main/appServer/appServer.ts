@@ -18,7 +18,8 @@ const initAppServer = async () => {
   })
 
   server.register(fastifyCookie)
-  server.register(fastifyMultipart)
+  // 音频缓存上传走 multipart，默认 1MB 限制会让大文件直接 500
+  server.register(fastifyMultipart, { limits: { fileSize: 100 * 1024 * 1024 } })
   if (isProd) {
     server.register(fastifyStatic, {
       root: path.join(__dirname, '../web'),

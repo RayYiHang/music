@@ -74,13 +74,18 @@ export interface TablesStructures {
 
 type TableNames = keyof TablesStructures
 
+// dist 布局: src/utils -> ../migrations (源码) / dist/packages/server/src/utils -> ../migrations
+const migrationsDir = path.resolve(__dirname, '../migrations')
+
 const readSqlFile = (filename: string) => {
-  return fs.readFileSync(path.join(dirname, `./migrations/${filename}`), 'utf8')
+  return fs.readFileSync(path.join(migrationsDir, filename), 'utf8')
 }
+
+const dataDir = process.env.DATA_DIR || dirname
 
 class DB {
   sqlite!: SQLite3.Database
-  dbFilePath: string = path.resolve(dirname, './api_cache/db.sqlite')
+  dbFilePath: string = path.join(dataDir, 'api_cache/db.sqlite')
 
   constructor() {
     log.info('[db] Initializing database...')
@@ -102,6 +107,8 @@ class DB {
     } catch (e) {
       log.error('[db] Database initialization failed.')
       log.error(e)
+      // 快速失败：否则 this.sqlite 为 undefined，后续所有查询都会抛错
+      throw e
     }
   }
 
@@ -146,7 +153,7 @@ class DB {
       return
     }
 
-    const sqlFiles = fs.readdirSync(path.join(dirname, './migrations'))
+    const sqlFiles = fs.readdirSync(migrationsDir)
     sqlFiles.forEach((sqlFile: string) => {
       const version = sqlFile.split('.').shift() || ''
       if (!validate(version)) return
