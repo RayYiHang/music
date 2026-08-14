@@ -2,7 +2,7 @@ import log from './log'
 import ytdl from 'ytdl-core'
 import axios, { AxiosProxyConfig } from 'axios'
 import store from './store'
-import httpProxyAgent from 'http-proxy-agent'
+import { HttpProxyAgent } from 'http-proxy-agent'
 
 class YoutubeDownloader {
   constructor() {
@@ -186,7 +186,7 @@ class YoutubeDownloader {
       console.time('[youtube] getInfo')
 
       const httpProxyForYouTubeSettings = store.get('settings.httpProxyForYouTube')
-      const agent = httpProxyAgent(httpProxyForYouTubeSettings?.proxy)
+      const agent = new HttpProxyAgent(httpProxyForYouTubeSettings?.proxy)
       const info = await ytdl.getInfo(video.id, {
         requestOptions: { agent },
       })

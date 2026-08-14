@@ -3,8 +3,9 @@ name: Build-Tag-Release
 # Triggered by pushing a tag like v2.7.7. Builds the Electron app on
 # macOS / Windows / Linux in parallel and attaches every installer
 # artifact (+ electron-updater's latest*.yml files) to the GitHub
-# Release for that tag. The release is created as a draft on the first
-# job that needs it; later jobs just append their assets to it.
+# Release for that tag — published immediately (not draft). The release
+# is created by the first job that needs it; later jobs just append
+# their assets to it.
 #
 # Why a separate workflow (vs. extending build.yaml):
 #   - build.yaml is triggered by pushes to the `release` branch and
@@ -50,7 +51,7 @@ jobs:
           # pushed tag.
           ref: ${{ github.event.inputs.tag || github.ref }}
 
-      - uses: pnpm/action-setup@v2.0.1
+      - uses: pnpm/action-setup@v4
         with:
           version: 8.6.12
 
@@ -129,10 +130,11 @@ jobs:
           # user typed in the manual dispatch form.
           tag_name: ${{ github.event.inputs.tag || github.ref_name }}
           name: ${{ github.event.inputs.tag || github.ref_name }}
-          # Draft so the maintainer can review + write release notes
-          # before publishing. Matches the old electron-builder
-          # `releaseType: draft` behavior.
-          draft: true
+          # Publish immediately — pushing a vX.Y.Z tag is the explicit
+          # release signal, so the Release (and its generated notes) goes
+          # public without a manual publish step. Set draft: true to go
+          # back to review-before-publish.
+          draft: false
           prerelease: false
           # generate_release_notes only runs on the first job that
           # creates the release; subsequent jobs just append files.

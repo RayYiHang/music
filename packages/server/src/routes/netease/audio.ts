@@ -161,8 +161,9 @@ async function audio(fastify: FastifyInstance) {
       try {
         const { body }: { body: any } = await NeteaseCloudMusicApi.song_url_v1({
           ...req.query,
+          crypto: 'weapi',
           cookie: (req as any).cookies,
-        })
+        } as any)
         fromNetease = body
       } catch (error) {
         log.error('[audio] song_url_v1 request failed', error)

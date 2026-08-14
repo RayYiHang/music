@@ -3,7 +3,6 @@ import { proxy } from 'valtio'
 
 interface UIStates {
   showLoginPanel: boolean
-  hideTopbarBackground: boolean
   mobileShowPlayingNext: boolean
   blurBackgroundImage: string | null
   fullscreen: boolean
@@ -13,7 +12,6 @@ interface UIStates {
 
 const initUIStates: UIStates = {
   showLoginPanel: false,
-  hideTopbarBackground: false,
   mobileShowPlayingNext: false,
   blurBackgroundImage: null,
   fullscreen: false,

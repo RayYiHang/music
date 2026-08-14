@@ -1,4 +1,4 @@
-import axios, { AxiosError, AxiosInstance, AxiosRequestConfig, AxiosResponse } from 'axios'
+import axios, { AxiosError, AxiosInstance, AxiosResponse, InternalAxiosRequestConfig, AxiosRequestConfig } from 'axios'
 
 export const baseURL = 'http://127.0.0.1:35530'
 
@@ -26,8 +26,8 @@ const service: AxiosInstance = axios.create({
   timeout: 15000,
 })
 
-service.interceptors.request.use((config: AxiosRequestConfig) => {
-  config.headers = { ...headers, ...config.headers }
+service.interceptors.request.use((config: InternalAxiosRequestConfig) => {
+  Object.assign(config.headers, headers)
   config.params = { ...params, ...config.params }
   return config
 })

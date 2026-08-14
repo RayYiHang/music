@@ -4,9 +4,11 @@ import { isLinux, isMac, isProd, isWindows } from './env'
 const { contextBridge, ipcRenderer } = require('electron')
 
 if (isProd) {
-  const log = require('electron-log')
-  log.transports.file.level = 'info'
-  log.transports.ipc.level = false
+  const log = require('electron-log/preload')
+  // Guard each transport — the preload/renderer logger in v5+ only exposes
+  // ipc + console (no file transport); old code assumed all transports exist.
+  if (log.transports.file) log.transports.file.level = 'info'
+  if (log.transports.ipc) log.transports.ipc.level = false
   log.variables.process = 'renderer'
   contextBridge.exposeInMainWorld('log', log)
 }

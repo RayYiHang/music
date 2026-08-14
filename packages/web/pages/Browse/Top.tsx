@@ -20,7 +20,7 @@ const Top = ({ cat }: { cat: string }) => {
         offset: (pageParam - 1) * 40 || 0,
       })
       return {
-        playlists: resp.playlists,
+        playlists: resp.playlists || [],
         hasMore: resp.more,
       }
     },

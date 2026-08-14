@@ -14,7 +14,7 @@ log.info('[electron] appServer/appServer.ts')
 
 const initAppServer = async () => {
   const server = fastify({
-    ignoreTrailingSlash: true,
+    routerOptions: { ignoreTrailingSlash: true },
   })
 
   server.register(fastifyCookie)

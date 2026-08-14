@@ -5,7 +5,7 @@
  * @see https://www.npmjs.com/package/electron-log
  */
 
-import log from 'electron-log'
+import log from 'electron-log/main'
 import pc from 'picocolors'
 import { isDev } from './env'
 

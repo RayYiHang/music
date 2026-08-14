@@ -13,10 +13,11 @@ const Hot = ({ cat }: { cat: string }) => {
         limit: 50,
         before: pageParam || 0,
       })
+      const playlists = resp.playlists || []
       return {
-        playlists: resp.playlists,
+        playlists,
         hasMore: resp.more,
-        lastUpdateTime: resp.playlists[resp.playlists.length - 1]?.updateTime || 0,
+        lastUpdateTime: playlists[playlists.length - 1]?.updateTime || 0,
       }
     },
     initialPageParam: 0,

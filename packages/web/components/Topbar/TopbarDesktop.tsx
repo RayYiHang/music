@@ -5,134 +5,70 @@ import SettingsButton from './SettingsButton'
 import NavigationButtons from './NavigationButtons'
 import uiStates from '@/web/states/uiStates'
 import { useSnapshot } from 'valtio'
-import { AnimatePresence, motion } from 'framer-motion'
-import { ease } from '@/web/utils/const'
-import { useLocation } from 'react-router-dom'
+import { motion } from 'framer-motion'
 import { IpcChannels } from '@/shared/IpcChannels'
 import player from '@/web/states/player'
 import settings from '@/web/states/settings'
 import Theme from '../Appearence/Theme'
+// ─── 顶栏背景架构 ───────────────────────────────────────────────────
+// 一套统一的「毛玻璃」层，替代以前并存的两种实现（呼吸灯路径的内联
+// blur(12px) + 普通路径的 backdrop-blur-2xl）：
+//
+//   · `top-bar`（global.css）— filter:blur 作用于顶栏自身内容（专辑
+//     封面图预先柔化）并向上多出 20px，让模糊边缘不可见。
+//   · `top-bar-frost`（global.css）— backdrop-filter 统一由 CSS 定义
+//     （16px 静止 / 8px 滚动中），是唯一的模糊真相来源。滚动降级
+//     只降半径（模糊成本 ∝ 半径×面积，顶栏面积小），不再「关模糊
+//     换黑底」——那会在每次滚动时产生黑闪。
+//   · 呼吸灯开启：不铺封面、不铺渐变，保持透明让光晕透出，毛玻璃
+//     只负责模糊滚过的内容。
+//   · 呼吸灯关闭 + 开启封面背景：铺封面 + 主题色遮罩。
+//   · 呼吸灯关闭 + 无封面：top-bar-dark/light 渐变兜底。
+//
 const Background = () => {
   const { showBackgroundImage, theme, enableBreathingEffect } = useSnapshot(settings)
-
-  // keep background
-  const { hideTopbarBackground } = useSnapshot(uiStates)
-  const location = useLocation()
-  const isPageHaveBlurBG =
-    location.pathname.startsWith('/album/') ||
-    location.pathname.startsWith('/artist/') ||
-    location.pathname.startsWith('/playlist/') ||
-    location.pathname.startsWith('/lyrics/')
-  const show = !hideTopbarBackground || !isPageHaveBlurBG
   const { fullscreen } = useSnapshot(uiStates)
   let bgURL = player.track?.al?.picUrl
   if (!showBackgroundImage) {
     bgURL = ''
   }
 
-  // 呼吸灯开启时：背景透明让光晕透出，仅用 backdrop-blur 模糊滚过的内容
-  // NOTE: blur radius kept modest (12px) — the breathing-light layer is
-  // already a full-screen blurred composite, stacking a second 40px
-  // backdrop-filter here doubled the GPU cost and was a major cause of
-  // sustained fan/heat when playing music. 12px is still enough to
-  // hide text scrolling under the topbar without re-blurring the whole
-  // viewport every frame.
-  // `top-bar-blur` + useScrollIdle: while the page is scrolling, CSS
-  // swaps this backdrop-filter for a theme-matched tint (content is
-  // moving, so the difference is invisible) and restores the blur at
-  // rest — see global.css.
-  if (enableBreathingEffect) {
-    return (
-      <div
-        className={cx(
-          'top-bar-blur',
-          'absolute inset-0 h-full w-full',
-          window.env?.isElectron && !fullscreen && 'rounded-tl-12 rounded-tr-12'
-        )}
-        style={{
-          backdropFilter: 'blur(12px) saturate(1.2)',
-          WebkitBackdropFilter: 'blur(12px) saturate(1.2)',
-          maskImage: 'linear-gradient(to bottom, black 60%, transparent 100%)',
-          WebkitMaskImage: 'linear-gradient(to bottom, black 60%, transparent 100%)',
-        }}
-      />
-    )
-  }
-
   return (
-    <>
-      <AnimatePresence>
-        {
-          <>
-            <div
-              className={cx(
-                'top-bar',
-                'absolute inset-0 h-full w-full',
-                !showBackgroundImage && (theme === 'dark' ? 'top-bar-dark' : 'top-bar-light')
-              )}
-              style={{
-                maskImage: 'linear-gradient(to bottom, black 60%, transparent 100%)',
-                WebkitMaskImage: 'linear-gradient(to bottom, black 60%, transparent 100%)',
-              }}
-            >
-              {bgURL ? (
-                <motion.div
-                  className={cx(
-                    'ease absolute inset-0 z-0 h-full w-full',
-                    css`
-                      background-repeat: no-repeat;
-                      background-size: cover;
-                      background-position: center top;
-                    `
-                  )}
-                  style={{ backgroundImage: `url(${bgURL})` }}
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  exit={{ opacity: 0 }}
-                  transition={{ duration: 0.5 }}
-                ></motion.div>
-              ) : (
-                <motion.div
-                  className={cx('ease absolute inset-0 z-0 h-full w-full bg-white dark:bg-black')}
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  exit={{ opacity: 0 }}
-                  transition={{ duration: 0.5 }}
-                ></motion.div>
-              )}
-              {/* 遮罩 */}
-              <motion.div
-                className={cx(
-                  'absolute inset-0 z-0',
-                  theme === 'dark' ? 'bg-black/50' : 'bg-white/50'
-                )}
-              />
-              <motion.div
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                transition={{ ease }}
-                className={cx(
-                  'relative inset-0 z-0 ',
-                  'h-full w-full',
-                  show && 'backdrop-blur-2xl',
-                  window.env?.isElectron && !fullscreen && 'rounded-tl-12 rounded-tr-12'
-                )}
-              >
-                <div
-                  className={cx(
-                    'absolute h-full w-full',
-                    css`
-                      background-color: rgba(0, 0, 0, 0.06);
-                    `
-                  )}
-                ></div>
-              </motion.div>
-            </div>
-          </>
-        }
-      </AnimatePresence>
-    </>
+    <div
+      className={cx(
+        'top-bar top-bar-frost',
+        'absolute inset-0 h-full w-full',
+        !enableBreathingEffect &&
+          !showBackgroundImage &&
+          (theme === 'dark' ? 'top-bar-dark' : 'top-bar-light'),
+        window.env?.isElectron && !fullscreen && 'rounded-tl-12 rounded-tr-12'
+      )}
+      style={{
+        maskImage: 'linear-gradient(to bottom, black 60%, transparent 100%)',
+        WebkitMaskImage: 'linear-gradient(to bottom, black 60%, transparent 100%)',
+      }}
+    >
+      {!enableBreathingEffect && bgURL && (
+        <motion.div
+          className={cx(
+            'ease absolute inset-0 z-0 h-full w-full',
+            css`
+              background-repeat: no-repeat;
+              background-size: cover;
+              background-position: center top;
+            `
+          )}
+          style={{ backgroundImage: `url(${bgURL})` }}
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          transition={{ duration: 0.5 }}
+        />
+      )}
+      {!enableBreathingEffect && (
+        <div className={cx('absolute inset-0 z-0', theme === 'dark' ? 'bg-black/50' : 'bg-white/50')} />
+      )}
+    </div>
   )
 }
 

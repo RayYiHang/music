@@ -455,7 +455,7 @@ const CoverRow = ({
         )}
         style={!initialAnimDone.current && index < 5 ? { animationDelay: `${index * 0.04}s` } : undefined}
       >
-        {row.map((item: Item) => (
+        {(row || []).map((item: Item) => (
           <CoverItem
             key={item.id}
             item={item}

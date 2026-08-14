@@ -189,23 +189,30 @@ class Main {
       return headers
     }
 
-    this.win.webContents.session.webRequest.onBeforeSendHeaders((details, callback) => {
-      const { requestHeaders, url } = details
-      addCORSHeaders(requestHeaders)
-
-      // 不加这几个 header 的话，使用 axios 加载 YouTube 音频会很慢
-      if (
-        url.includes('googlevideo.com') ||
-        url.includes('github.com') ||
-        url.includes('music.126.net')
-      ) {
+    // URL 过滤器：只有这三个域名的请求需要 header 改写（YouTube 音频
+    // 需要 Range/Sec-Fetch 才不会整段预载）。其余请求（封面图、同源 API
+    // 调用……）原本也只做一件无效的事——往请求头里塞 ACAO（CORS 是响应
+    // 侧语义，请求头里塞了等于没塞）。不过滤时每张封面图都要空跑一次
+    // 这个 JS 回调，滚动歌单墙时每分钟几百次；过滤后为零。
+    this.win.webContents.session.webRequest.onBeforeSendHeaders(
+      {
+        urls: [
+          '*://*.googlevideo.com/*',
+          '*://googlevideo.com/*',
+          '*://*.github.com/*',
+          '*://github.com/*',
+          '*://*.music.126.net/*',
+          '*://music.126.net/*',
+        ],
+      },
+      (details, callback) => {
+        const { requestHeaders } = details
         requestHeaders['Sec-Fetch-Mode'] = 'no-cors'
         requestHeaders['Sec-Fetch-Dest'] = 'audio'
         requestHeaders['Range'] = 'bytes=0-'
+        callback({ requestHeaders })
       }
-
-      callback({ requestHeaders })
-    })
+    )
 
     this.win.webContents.session.webRequest.onHeadersReceived((details, callback) => {
       const { responseHeaders, url } = details

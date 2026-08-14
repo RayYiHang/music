@@ -10,7 +10,7 @@ import { useEffect } from 'react'
  * idle window.
  *
  * CSS uses the attribute to temporarily drop expensive effects (e.g.
- * the topbar's backdrop-filter, see `.top-bar-blur` in global.css)
+ * the topbar's backdrop-filter, see `.top-bar-frost` in global.css)
  * during motion — imperceptible while content is moving — and restore
  * them at rest.
  *

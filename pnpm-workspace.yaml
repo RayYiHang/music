@@ -1,2 +1,11 @@
 packages:
   - 'packages/*'
+
+# pnpm ≥10 reads this from pnpm-workspace.yaml instead of the root
+# package.json "pnpm" field. better-sqlite3 must NOT build at install time:
+# the root 9.2.2 copy is Electron-only (electron-rebuild in desktop postinstall
+# produces tmp/bin binaries; it cannot compile against Node ≥23 V8 headers),
+# and the server's nested v12 copy is provisioned by
+# packages/server/scripts/install-sqlite3.js instead.
+neverBuiltDependencies:
+  - better-sqlite3

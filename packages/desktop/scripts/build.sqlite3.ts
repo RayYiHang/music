@@ -1,5 +1,16 @@
 /* eslint-disable @typescript-eslint/no-var-requires */
-const { rebuild } = require('@electron/rebuild')
+// @electron/rebuild v4+ is ESM-only and uses import.meta.dirname internally.
+// When tsx transpiles this CJS script, a top-level require() of the ESM
+// module loses import.meta.dirname → TypeError. Lazy-load via dynamic
+// import() inside the rebuild function so Node loads it as native ESM.
+let _rebuild: any = null
+async function getRebuild() {
+  if (!_rebuild) {
+    const mod = await import('@electron/rebuild')
+    _rebuild = mod.rebuild
+  }
+  return _rebuild
+}
 const fs = require('fs')
 const minimist = require('minimist')
 const pc = require('picocolors')
@@ -38,6 +49,18 @@ if (!fs.existsSync(binDir)) {
 // Get Electron Module Version
 let electronModuleVersion = ''
 async function getElectronModuleVersion() {
+  // Prefer an offline lookup through node-abi (a transitive dep of
+  // @electron/rebuild): exact, and no network dependency.
+  try {
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
+    const nodeAbi = require('node-abi')
+    electronModuleVersion = nodeAbi.getAbi(electronVersion, 'electron')
+    console.log(pc.cyan(`electronModuleVersion=${electronModuleVersion} (node-abi)`))
+    return
+  } catch (e) {
+    console.log(pc.yellow('node-abi lookup failed, falling back to releases.json'))
+  }
+
   const releases = await axios({
     method: 'get',
     url: 'https://releases.electronjs.org/releases.json',
@@ -52,9 +75,12 @@ async function getElectronModuleVersion() {
   })
   if (!releases.data) {
     console.error(pc.red('Can not get electron releases'))
-    process.exit(1)
+    return
   }
-  electronModuleVersion = releases.data.find(r => r.version.includes(electronVersion))?.modules
+  // Match on major version: the manifest may pin a different patch than the
+  // lockfile resolved, and every x.y.z of the same major shares one ABI.
+  const electronMajor = electronVersion.split('.')[0]
+  electronModuleVersion = releases.data.find(r => r.version.startsWith(`${electronMajor}.`))?.modules
   if (!electronModuleVersion) {
     console.error(pc.red('Can not find electron module version in electron-releases'))
     process.exit(1)
@@ -71,30 +97,67 @@ async function download(arch: Arch) {
   }
   const fileName = `better-sqlite3-v${betterSqlite3Version}-electron-v${electronModuleVersion}-${process.platform}-${arch}`
   const zipFileName = `${fileName}.tar.gz`
-  const url = `https://ghproxy.com/https://github.com/JoshuaWise/better-sqlite3/releases/download/v${betterSqlite3Version}/${zipFileName}`
+  // Direct GitHub first (WiseLibs is the current repo; JoshuaWise redirects
+  // here but 404s on the redirect for newer releases). ghproxy mirror as
+  // fallback for networks where github.com is slow or blocked.
+  //
+  // If the installed npm version (e.g. 12.11.1) doesn't yet ship a prebuild
+  // for this Electron ABI, also try v12.12.0 (GitHub-only release that adds
+  // newer Electron ABI prebuilds — same native source, no API change).
+  const versionsToTry = [betterSqlite3Version]
+  if (betterSqlite3Version !== '12.12.0') {
+    versionsToTry.push('12.12.0')
+  }
+  let urls: string[] = []
+  for (const ver of versionsToTry) {
+    const zname = `better-sqlite3-v${ver}-electron-v${electronModuleVersion}-${process.platform}-${arch}.tar.gz`
+    urls = urls.concat([
+      `https://github.com/WiseLibs/better-sqlite3/releases/download/v${ver}/${zname}`,
+      `https://ghproxy.com/https://github.com/WiseLibs/better-sqlite3/releases/download/v${ver}/${zname}`,
+    ])
+  }
   if (!fs.existsSync(tmpDir)) {
     fs.mkdirSync(tmpDir, {
       recursive: true,
     })
   }
 
-  try {
-    await axios({
-      method: 'get',
-      url,
-      responseType: 'stream',
-    }).then(response => {
-      const writer = fs.createWriteStream(resolve(tmpDir, `./${zipFileName}`))
-      response.data.pipe(writer)
-      return finished(writer)
-    })
-  } catch (e) {
-    console.log(pc.red('Download failed! Skip download.', e))
+  let downloaded = false
+  let downloadedZipName = ''
+  for (const url of urls) {
+    try {
+      // Validate the response is actually a gzip, not a 404 HTML page from a mirror
+      const resp = await axios({
+        method: 'get',
+        url,
+        responseType: 'stream',
+        timeout: 60000,
+      })
+      // Check content-type to avoid saving HTML error pages
+      const ct = resp.headers['content-type'] || ''
+      const cl = parseInt(resp.headers['content-length'] || '0', 10)
+      if (ct.includes('text/html') || (cl > 0 && cl < 1000)) {
+        console.log(pc.yellow(`Got HTML/error page from ${url}, trying next...`))
+        continue
+      }
+      const zipName = url.split('/').pop()!
+      downloadedZipName = zipName
+      const writer = fs.createWriteStream(resolve(tmpDir, `./${zipName}`))
+      resp.data.pipe(writer)
+      await finished(writer)
+      downloaded = true
+      break
+    } catch (e: any) {
+      console.log(pc.yellow(`Download failed from ${url}, trying next...`))
+    }
+  }
+  if (!downloaded) {
+    console.log(pc.red('All download mirrors failed!'))
     return false
   }
 
   try {
-    execSync(`tar -xvzf ${tmpDir}/${zipFileName} -C ${tmpDir}`)
+    execSync(`tar -xvzf ${tmpDir}/${downloadedZipName} -C ${tmpDir}`)
   } catch (e) {
     console.log(pc.red('Extract failed! Skip extract.', e))
     return false
@@ -128,6 +191,7 @@ async function build(arch: Arch) {
   }
 
   console.log(pc.cyan(`Building for ${arch}...`))
+  const rebuild = await getRebuild()
   await rebuild({
     projectRootPath: projectDir,
     buildPath: process.cwd(),
@@ -154,7 +218,7 @@ async function build(arch: Arch) {
 }
 
 async function main() {
-  // await getElectronModuleVersion()
+  await getElectronModuleVersion()
   if (argv.x64 || argv.arm64 || argv.arm) {
     if (argv.x64) await build('x64')
     if (argv.arm64) await build('arm64')

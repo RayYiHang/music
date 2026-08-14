@@ -1,5 +1,8 @@
 {
   "$schema": "https://turbo.build/schema.json",
+  "globalPassThroughEnv": [
+    "IS_ELECTRON"
+  ],
   "tasks": {
     "post-install": {
       "cache": false

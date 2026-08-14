@@ -846,22 +846,30 @@ input[type='number']::-webkit-outer-spin-button {
 }
 
 /* ---------------------------------------------------------------- */
-/* Scroll-aware topbar blur degradation                               */
+/* Topbar frost layer — single source of truth for the topbar blur.  */
 /*                                                                    */
+/* `top-bar-frost` carries the backdrop-filter for every topbar      */
+/* variant (breathing-light, cover background, plain gradient).      */
 /* While any scroll container is scrolling (useScrollIdle toggles    */
-/* html[data-scrolling]), drop the topbar's backdrop-filter and      */
-/* substitute a theme-matched semi-opaque tint. The content under    */
-/* the bar is in motion, so the swap is imperceptible; the blur is   */
-/* restored the moment scrolling stops. backdrop-filter would       */
-/* otherwise re-filter the moving content every frame on top of the  */
-/* breathing layer's compositing.                                     */
+/* html[data-scrolling]), the blur radius is halved instead of the   */
+/* filter being switched off: cost scales with radius × area, the    */
+/* topbar is a thin strip, and a radius change under moving content  */
+/* is imperceptible — the old "blur off + black tint" swap produced  */
+/* a visible dark flash on every scroll.                             */
 /* ---------------------------------------------------------------- */
-html[data-scrolling] .top-bar-blur {
-  backdrop-filter: none !important;
-  -webkit-backdrop-filter: none !important;
-  background: rgba(255, 255, 255, 0.62);
+.top-bar-frost {
+  backdrop-filter: blur(16px) saturate(1.2);
+  -webkit-backdrop-filter: blur(16px) saturate(1.2);
+  /* Cheap tint keeps the bar readable even before the filter kicks
+     in, and makes the scrolling↔rest radius change seamless. */
+  background-color: rgba(255, 255, 255, 0.32);
 }
 
-html[data-scrolling] .dark .top-bar-blur {
-  background: rgba(0, 0, 0, 0.58);
+.dark .top-bar-frost {
+  background-color: rgba(0, 0, 0, 0.32);
+}
+
+html[data-scrolling] .top-bar-frost {
+  backdrop-filter: blur(8px) saturate(1.1);
+  -webkit-backdrop-filter: blur(8px) saturate(1.1);
 }
