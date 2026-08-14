@@ -9,7 +9,7 @@ import useSettings from '../hooks/useSettings'
 
 const VideoCover = ({ source, onPlay }: { source?: string; onPlay?: () => void }) => {
   const videoRef = useRef<HTMLVideoElement>(null)
-  const hls = useRef<Hls>()
+  const hls = useRef<Hls | null>(null)
   const windowFocus = useWindowFocus()
   const { playAnimatedArtworkFromApple } = useSettings()
 
@@ -21,7 +21,9 @@ const VideoCover = ({ source, onPlay }: { source?: string; onPlay?: () => void }
       hls.current.attachMedia(videoRef.current)
     }
 
-    return () => hls.current && hls.current.destroy()
+    return () => {
+      hls.current?.destroy()
+    }
   }, [source])
 
   // Pause video cover when playing another video

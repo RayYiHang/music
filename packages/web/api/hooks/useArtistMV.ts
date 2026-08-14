@@ -5,15 +5,13 @@ import { FetchArtistMVParams, ArtistApiNames, FetchArtistMVResponse } from '@/sh
 import { useQuery } from '@tanstack/react-query'
 
 export default function useArtistMV(params: FetchArtistMVParams) {
-  return useQuery(
-    [ArtistApiNames.FetchArtistMV, params],
-    async () => {
+  return useQuery({
+    queryKey: [ArtistApiNames.FetchArtistMV, params],
+    queryFn: async () => {
       const data = await fetchArtistMV(params)
       return data
     },
-    {
-      enabled: !!params.id && params.id !== 0,
-      staleTime: 3600000,
-    }
-  )
+    enabled: !!params.id && params.id !== 0,
+    staleTime: 3600000,
+  })
 }

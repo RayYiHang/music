@@ -1,7 +1,7 @@
 import useUser from '@/web/api/hooks/useUser'
 import Appearance from './Appearance'
 import { css, cx } from '@emotion/css'
-import { useEffect, useState } from 'react'
+import React, { useEffect, useState } from 'react'
 import UserCard from './UserCard'
 import { useTranslation } from 'react-i18next'
 import { motion, useAnimationControls } from 'framer-motion'
@@ -83,7 +83,7 @@ const Settings = () => {
   const [activeCategory, setActiveCategory] = useState<Category>('general')
   const { data: user } = useUser()
 
-  const categoriesAndComponents: { id: Category; component: JSX.Element }[] = [
+  const categoriesAndComponents: { id: Category; component: React.JSX.Element }[] = [
     { id: 'general', component: <General /> },
     { id: 'appearance', component: <Appearance /> },
     { id: 'player', component: <Player /> },

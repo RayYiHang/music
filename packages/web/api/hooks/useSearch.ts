@@ -1,4 +1,8 @@
-import { useInfiniteQuery, useQuery } from '@tanstack/react-query'
+import {
+  keepPreviousData,
+  useInfiniteQuery,
+  useQuery,
+} from '@tanstack/react-query'
 import {
   cloudSearch,
   fetchSearchSuggestions,
@@ -26,35 +30,31 @@ const hasKeywords = (keywords: string) => keywords.trim().length > 0
 
 // 搜索建议 (SearchBox dropdown)
 export function useSearchSuggestions(keywords: string) {
-  return useQuery<FetchSearchSuggestionsResponse>(
-    [SearchApiNames.FetchSearchSuggestions, keywords],
-    ({ signal }) =>
+  return useQuery<FetchSearchSuggestionsResponse>({
+    queryKey: [SearchApiNames.FetchSearchSuggestions, keywords],
+    queryFn: ({ signal }) =>
       fetchSearchSuggestions({ keywords }, { signal }).then(ensureOk),
-    {
-      enabled: hasKeywords(keywords),
-      staleTime: 60 * 1000,
-      cacheTime: 5 * 60 * 1000,
-      retry: 1,
-      keepPreviousData: true,
-      refetchOnWindowFocus: false,
-    }
-  )
+    enabled: hasKeywords(keywords),
+    staleTime: 60 * 1000,
+    gcTime: 5 * 60 * 1000,
+    retry: 1,
+    placeholderData: keepPreviousData,
+    refetchOnWindowFocus: false,
+  })
 }
 
 // 搜索多重匹配 (best match)
 export function useSearchBestMatch(keywords: string) {
-  return useQuery<MultiMatchSearchResponse>(
-    [SearchApiNames.MultiMatchSearch, keywords],
-    ({ signal }) => multiMatchSearch({ keywords }, { signal }).then(ensureOk),
-    {
-      enabled: hasKeywords(keywords),
-      staleTime: 5 * 60 * 1000,
-      cacheTime: 30 * 60 * 1000,
-      retry: 1,
-      keepPreviousData: true,
-      refetchOnWindowFocus: false,
-    }
-  )
+  return useQuery<MultiMatchSearchResponse>({
+    queryKey: [SearchApiNames.MultiMatchSearch, keywords],
+    queryFn: ({ signal }) => multiMatchSearch({ keywords }, { signal }).then(ensureOk),
+    enabled: hasKeywords(keywords),
+    staleTime: 5 * 60 * 1000,
+    gcTime: 30 * 60 * 1000,
+    retry: 1,
+    placeholderData: keepPreviousData,
+    refetchOnWindowFocus: false,
+  })
 }
 
 // Per-type cloudsearch. NOTE: we deliberately do NOT use the aggregated
@@ -67,30 +67,28 @@ export function useSearchResults(
   type: keyof typeof SearchTypes,
   limit = 30
 ) {
-  return useQuery<CloudSearchResponse>(
-    [SearchApiNames.CloudSearch, keywords, type, limit],
-    ({ signal }) =>
+  return useQuery<CloudSearchResponse>({
+    queryKey: [SearchApiNames.CloudSearch, keywords, type, limit],
+    queryFn: ({ signal }) =>
       cloudSearch({ keywords, limit, offset: 0, type }, { signal }).then(
         ensureOk
       ),
-    {
-      enabled: hasKeywords(keywords),
-      staleTime: 5 * 60 * 1000,
-      cacheTime: 30 * 60 * 1000,
-      retry: 1,
-      keepPreviousData: true,
-      refetchOnWindowFocus: false,
-    }
-  )
+    enabled: hasKeywords(keywords),
+    staleTime: 5 * 60 * 1000,
+    gcTime: 30 * 60 * 1000,
+    retry: 1,
+    placeholderData: keepPreviousData,
+    refetchOnWindowFocus: false,
+  })
 }
 
 const SEARCH_PAGE_SIZE = 30
 
 // 云搜索 - 单曲 (infinite)
 export function useSearchTracksInfinite(keywords: string) {
-  return useInfiniteQuery<CloudSearchResponse>(
-    [SearchApiNames.CloudSearch, keywords, 'Single', 'infinite'],
-    ({ pageParam = 0, signal }) =>
+  return useInfiniteQuery({
+    queryKey: [SearchApiNames.CloudSearch, keywords, 'Single', 'infinite'],
+    queryFn: ({ pageParam = 0, signal }) =>
       cloudSearch(
         {
           keywords,
@@ -100,19 +98,18 @@ export function useSearchTracksInfinite(keywords: string) {
         },
         { signal }
       ).then(ensureOk),
-    {
-      enabled: hasKeywords(keywords),
-      staleTime: 5 * 60 * 1000,
-      cacheTime: 30 * 60 * 1000,
-      retry: 1,
-      keepPreviousData: true,
-      refetchOnWindowFocus: false,
-      getNextPageParam: (lastPage, pages) => {
-        const songCount = lastPage?.result?.songCount ?? 0
-        return pages.length * SEARCH_PAGE_SIZE < songCount
-          ? pages.length
-          : undefined
-      },
-    }
-  )
+    enabled: hasKeywords(keywords),
+    staleTime: 5 * 60 * 1000,
+    gcTime: 30 * 60 * 1000,
+    retry: 1,
+    placeholderData: keepPreviousData,
+    refetchOnWindowFocus: false,
+    initialPageParam: 0,
+    getNextPageParam: (lastPage, pages) => {
+      const songCount = lastPage?.result?.songCount ?? 0
+      return pages.length * SEARCH_PAGE_SIZE < songCount
+        ? pages.length
+        : undefined
+    },
+  })
 }

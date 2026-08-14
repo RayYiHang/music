@@ -29,11 +29,11 @@ const reactQueryOptions = {
 
 const Daily = ({ className }: { className?: string }) => {
 
-  const { data: dailyRecommendSongs, isLoading: isLoadingDaily } = useQuery(
-    [PlaylistApiNames.FetchDailyRecommendSongs],
-    () => fetchDailyRecommendSongs(),
-    reactQueryOptions
-  )
+  const { data: dailyRecommendSongs, isLoading: isLoadingDaily } = useQuery({
+    queryKey: [PlaylistApiNames.FetchDailyRecommendSongs],
+    queryFn: () => fetchDailyRecommendSongs(),
+    ...reactQueryOptions,
+  })
   const { trackID, state } = useSnapshot(player)
   const tracks = dailyRecommendSongs?.data?.dailySongs || []
 

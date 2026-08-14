@@ -120,7 +120,7 @@ const TrackContextMenu = () => {
                   ids: [Number(dataSourceID)],
                 })
                 const track = tracks?.songs?.[0]
-                if (track) navigate(`/album/${track.al.id}`)
+                if (track?.al?.id) navigate(`/album/${track.al.id}`)
               },
             },
             {

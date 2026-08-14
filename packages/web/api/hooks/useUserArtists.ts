@@ -2,18 +2,18 @@ import { fetchUserArtists } from '@/web/api/user'
 import { UserApiNames, FetchUserArtistsResponse } from '@/shared/api/User'
 import { CacheAPIs } from '@/shared/CacheAPIs'
 import { IpcChannels } from '@/shared/IpcChannels'
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { useMutation, useQuery } from '@tanstack/react-query'
 import toast from 'react-hot-toast'
-import { likeAArtist } from '../artist'
+import { fetchArtist, likeAArtist } from '../artist'
 import { ArtistApiNames, FetchArtistResponse } from '@/shared/api/Artist'
 import reactQueryClient from '@/web/utils/reactQueryClient'
 import { cloneDeep } from 'lodash-es'
 
 export default function useUserArtists() {
   const key = [UserApiNames.FetchUserArtists]
-  return useQuery(
-    key,
-    () => {
+  return useQuery({
+    queryKey: key,
+    queryFn: () => {
       const existsQueryData = reactQueryClient.getQueryData(key)
       if (!existsQueryData) {
         window.ipcRenderer
@@ -26,18 +26,16 @@ export default function useUserArtists() {
       }
       return fetchUserArtists()
     },
-    {
-      refetchOnWindowFocus: true,
-    }
-  )
+    refetchOnWindowFocus: true,
+  })
 }
 
 export const useMutationLikeAArtist = () => {
   const { data: userLikedArtists } = useUserArtists()
   const key = [UserApiNames.FetchUserArtists]
 
-  return useMutation(
-    async (artistID: number) => {
+  return useMutation({
+    mutationFn: async (artistID: number) => {
       if (!artistID || !userLikedArtists?.data) {
         throw new Error('artistID is required or userLikedArtists is undefined')
       }
@@ -48,58 +46,62 @@ export const useMutationLikeAArtist = () => {
       if (response.code !== 200) throw new Error((response as any).msg)
       return response
     },
-    {
-      onMutate: async artistID => {
-        // Cancel any outgoing refetches (so they don't overwrite our optimistic update)
-        await reactQueryClient.cancelQueries(key)
+    onMutate: async artistID => {
+      // Cancel any outgoing refetches (so they don't overwrite our optimistic update)
+      await reactQueryClient.cancelQueries({ queryKey: key })
 
-        // 如果还未获取用户收藏的歌手列表，则获取一次
-        if (!reactQueryClient.getQueryData(key)) {
-          await reactQueryClient.fetchQuery(key)
+      // 如果还未获取用户收藏的歌手列表，则获取一次
+      if (!reactQueryClient.getQueryData(key)) {
+        await reactQueryClient.fetchQuery({
+          queryKey: key,
+          queryFn: () => fetchUserArtists(),
+        })
+      }
+
+      // Snapshot the previous value
+      const previousData = reactQueryClient.getQueryData(key) as FetchUserArtistsResponse
+
+      const isLiked = !!previousData?.data.find(a => a.id === artistID)
+      const newLikedArtists = cloneDeep(previousData!)
+
+      if (isLiked) {
+        newLikedArtists.data = previousData.data.filter(a => a.id !== artistID)
+      } else {
+        // 从react-query缓存获取歌手信息
+        const artistFromCache: FetchArtistResponse | undefined = reactQueryClient.getQueryData([
+          ArtistApiNames.FetchArtist,
+          { id: artistID },
+        ])
+
+        // 从api获取歌手信息
+        const artist: FetchArtistResponse | undefined = artistFromCache
+          ? artistFromCache
+          : await reactQueryClient.fetchQuery({
+              queryKey: [ArtistApiNames.FetchArtist, { id: artistID }],
+              queryFn: () => fetchArtist({ id: artistID }),
+            })
+
+        if (!artist?.artist) {
+          toast.error('Failed to like artist: unable to fetch artist info')
+          throw new Error('unable to fetch artist info')
         }
+        newLikedArtists.data.unshift(artist.artist)
 
-        // Snapshot the previous value
-        const previousData = reactQueryClient.getQueryData(key) as FetchUserArtistsResponse
+        // Optimistically update to the new value
+        reactQueryClient.setQueriesData({ queryKey: key }, newLikedArtists)
+      }
 
-        const isLiked = !!previousData?.data.find(a => a.id === artistID)
-        const newLikedArtists = cloneDeep(previousData!)
+      reactQueryClient.setQueriesData({ queryKey: key }, newLikedArtists)
 
-        if (isLiked) {
-          newLikedArtists.data = previousData.data.filter(a => a.id !== artistID)
-        } else {
-          // 从react-query缓存获取歌手信息
-          const artistFromCache: FetchArtistResponse | undefined = reactQueryClient.getQueryData([
-            ArtistApiNames.FetchArtist,
-            { id: artistID },
-          ])
-
-          // 从api获取歌手信息
-          const artist: FetchArtistResponse | undefined = artistFromCache
-            ? artistFromCache
-            : await reactQueryClient.fetchQuery([ArtistApiNames.FetchArtist, { id: artistID }])
-
-          if (!artist?.artist) {
-            toast.error('Failed to like artist: unable to fetch artist info')
-            throw new Error('unable to fetch artist info')
-          }
-          newLikedArtists.data.unshift(artist.artist)
-
-          // Optimistically update to the new value
-          reactQueryClient.setQueriesData(key, newLikedArtists)
-        }
-
-        reactQueryClient.setQueriesData(key, newLikedArtists)
-
-        // Return a context object with the snapshotted value
-        return { previousData }
-      },
-      // If the mutation fails, use the context returned from onMutate to roll back
-      onSettled: (data, error, artistID, context) => {
-        if (data?.code !== 200) {
-          reactQueryClient.setQueryData(key, (context as any).previousData)
-          toast((error as any).toString())
-        }
-      },
-    }
-  )
+      // Return a context object with the snapshotted value
+      return { previousData }
+    },
+    // If the mutation fails, use the context returned from onMutate to roll back
+    onSettled: (data, error, artistID, context) => {
+      if (data?.code !== 200) {
+        reactQueryClient.setQueryData(key, (context as any).previousData)
+        toast((error as any).toString())
+      }
+    },
+  })
 }

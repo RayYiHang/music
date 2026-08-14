@@ -6,7 +6,7 @@ import toast from 'react-hot-toast'
 import { changeAccentColor, changeTheme } from './utils/theme'
 import { RepeatMode } from '@/shared/playerDataTypes'
 
-const on = <T extends keyof IpcChannelsParams>(
+const on = <T extends keyof IpcChannelsParams & keyof IpcChannelsReturns>(
   channel: T,
   listener: (event: any, params: IpcChannelsReturns[T]) => void
 ) => {

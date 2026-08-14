@@ -23,6 +23,17 @@ const sizes = {
   },
 } as const
 
+// The breakpoint union includes 'xs', which has no entry in the size tables
+// above (extra-small renders with the small tile sizes) — index through a
+// widened record so the lookup stays type-safe.
+const sizeForBreakpoint = (
+  large: boolean,
+  breakpoint: string
+): Parameters<typeof resizeImage>[1] =>
+  (sizes[large ? 'large' : 'small'] as Record<string, Parameters<typeof resizeImage>[1]>)[
+    breakpoint
+  ] ?? (large ? 'md' : 'sm')
+
 const CoverWall = ({
   albums,
   playlists,
@@ -44,7 +55,7 @@ const CoverWall = ({
     >
       {albums?.map(album => (
         <Image
-          src={resizeImage(album.coverUrl, sizes[album.large ? 'large' : 'small'][breakpoint])}
+          src={resizeImage(album.coverUrl, sizeForBreakpoint(album.large, breakpoint))}
           key={album.id}
           className={cx(
             'aspect-square h-full w-full rounded-20 lg:rounded-24',
@@ -56,10 +67,7 @@ const CoverWall = ({
       ))}
       {playlists?.map(playlist => (
         <Image
-          src={resizeImage(
-            playlist.coverUrl,
-            sizes[playlist.large ? 'large' : 'small'][breakpoint]
-          )}
+          src={resizeImage(playlist.coverUrl, sizeForBreakpoint(playlist.large, breakpoint))}
           key={playlist.id}
           className={cx(
             'aspect-square h-full w-full rounded-20 lg:rounded-24',

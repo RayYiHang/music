@@ -14,10 +14,12 @@ const ArtistInfo = ({ artist, isLoading }: { artist?: Artist; isLoading: boolean
   )
 
   const [isOpenDescription, setIsOpenDescription] = useState(false)
+  const localizedBio = artistFromApple?.artistBio as Record<string, string> | undefined
   const description =
-    artistFromApple?.artistBio?.[i18n.language.replace('-', '_')] ||
+    localizedBio?.[i18n.language.replace('-', '_')] ||
     (i18n.language === 'zh-CN' && artist?.briefDesc) ||
-    artistFromApple?.artistBio?.en_US
+    artistFromApple?.artistBio?.en_US ||
+    ''
 
   return (
     <div>

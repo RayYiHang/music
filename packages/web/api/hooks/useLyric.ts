@@ -6,10 +6,10 @@ import { IpcChannels } from '@/shared/IpcChannels'
 import { useQuery } from '@tanstack/react-query'
 
 export default function useLyric(params: FetchLyricParams) {
-  const key = [TrackApiNames.FetchLyric, params]
-  return useQuery(
-    key,
-    async () => {
+  const key = [TrackApiNames.FetchLyric, params] as const
+  return useQuery({
+    queryKey: key,
+    queryFn: async () => {
       // fetch from cache as initial data
       const cache = await window.ipcRenderer?.invoke(IpcChannels.GetApiCache, {
         api: CacheAPIs.Lyric,
@@ -30,27 +30,23 @@ export default function useLyric(params: FetchLyricParams) {
 
       return fetchLyric(params)
     },
-    {
-      enabled: !!params.id && params.id !== 0,
-      refetchInterval: false,
-      refetchOnWindowFocus: false,
-      staleTime: Infinity,
-    }
-  )
+    enabled: !!params.id && params.id !== 0,
+    refetchInterval: false,
+    refetchOnWindowFocus: false,
+    staleTime: Infinity,
+  })
 }
 
 export function fetchLyricWithReactQuery(params: FetchLyricParams) {
-  return reactQueryClient.fetchQuery(
-    [TrackApiNames.FetchLyric, params],
-    () => {
+  return reactQueryClient.fetchQuery({
+    queryKey: [TrackApiNames.FetchLyric, params],
+    queryFn: () => {
       return fetchLyricNew(params).catch(() => fetchLyric(params))
     },
-    {
-      retry: 4,
-      retryDelay: (retryCount: number) => {
-        return retryCount * 500
-      },
-      staleTime: Infinity,
-    }
-  )
+    retry: 4,
+    retryDelay: (retryCount: number) => {
+      return retryCount * 500
+    },
+    staleTime: Infinity,
+  })
 }

@@ -11,9 +11,9 @@ export default function useUserListenedRecords(params: { type: 'week' | 'all' })
   const uid = user?.account?.id || 0
   const key = [UserApiNames.FetchListenedRecords, uid]
 
-  return useQuery(
-    key,
-    () => {
+  return useQuery({
+    queryKey: key,
+    queryFn: () => {
       const existsQueryData = reactQueryClient.getQueryData(key)
       if (!existsQueryData) {
         window.ipcRenderer
@@ -30,9 +30,7 @@ export default function useUserListenedRecords(params: { type: 'week' | 'all' })
         type: params.type === 'week' ? 1 : 0,
       })
     },
-    {
-      refetchOnWindowFocus: false,
-      enabled: !!uid,
-    }
-  )
+    refetchOnWindowFocus: false,
+    enabled: !!uid,
+  })
 }

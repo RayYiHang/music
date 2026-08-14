@@ -1,4 +1,4 @@
-import { likeAAlbum } from '@/web/api/album'
+import { fetchAlbum, likeAAlbum } from '@/web/api/album'
 import { useMutation, useQuery } from '@tanstack/react-query'
 import useUser from './useUser'
 import { IpcChannels } from '@/shared/IpcChannels'
@@ -14,9 +14,9 @@ export default function useUserAlbums(params: FetchUserAlbumsParams = {}) {
   const { data: user } = useUser()
   const uid = user?.profile?.userId ?? 0
   const key = [UserApiNames.FetchUserAlbums, uid]
-  return useQuery(
-    key,
-    () => {
+  return useQuery({
+    queryKey: key,
+    queryFn: () => {
       const existsQueryData = reactQueryClient.getQueryData(key)
       if (!existsQueryData) {
         window.ipcRenderer
@@ -31,10 +31,8 @@ export default function useUserAlbums(params: FetchUserAlbumsParams = {}) {
 
       return fetchUserAlbums(params)
     },
-    {
-      refetchOnWindowFocus: true,
-    }
-  )
+    refetchOnWindowFocus: true,
+  })
 }
 
 export const useMutationLikeAAlbum = () => {
@@ -43,8 +41,8 @@ export const useMutationLikeAAlbum = () => {
   const uid = user?.profile?.userId ?? 0
   const key = [UserApiNames.FetchUserAlbums, uid]
 
-  return useMutation(
-    async (albumID: number) => {
+  return useMutation({
+    mutationFn: async (albumID: number) => {
       if (!albumID || userAlbums?.data === undefined) {
         throw new Error('album id is required or userAlbums is undefined')
       }
@@ -55,69 +53,62 @@ export const useMutationLikeAAlbum = () => {
       if (response.code !== 200) throw new Error((response as any).msg)
       return response
     },
-    {
-      onMutate: async albumID => {
-        // Cancel any outgoing refetches (so they don't overwrite our optimistic update)
-        await reactQueryClient.cancelQueries(key)
+    onMutate: async albumID => {
+      // Cancel any outgoing refetches (so they don't overwrite our optimistic update)
+      await reactQueryClient.cancelQueries({ queryKey: key })
 
-        console.log(reactQueryClient.getQueryData(key))
+      // 如果还未获取用户收藏的专辑列表，则获取一次
+      if (!reactQueryClient.getQueryData(key)) {
+        await reactQueryClient.fetchQuery({
+          queryKey: key,
+          queryFn: () => fetchUserAlbums({ limit: 2000 }),
+        })
+      }
 
-        // 如果还未获取用户收藏的专辑列表，则获取一次
-        if (!reactQueryClient.getQueryData(key)) {
-          await reactQueryClient.fetchQuery(key)
+      // Snapshot the previous value
+      const previousData = reactQueryClient.getQueryData(key) as FetchUserAlbumsResponse
+
+      const isLiked = !!previousData?.data.find(a => a.id === albumID)
+      const newAlbums = cloneDeep(previousData!)
+
+      if (isLiked) {
+        newAlbums.data = previousData.data.filter(a => a.id !== albumID)
+      } else {
+        // 从react-query缓存获取专辑
+        const albumFromCache: FetchAlbumResponse | undefined = reactQueryClient.getQueryData([
+          AlbumApiNames.FetchAlbum,
+          { id: albumID },
+        ])
+
+        // 从api获取专辑
+        const album: FetchAlbumResponse | undefined = albumFromCache
+          ? albumFromCache
+          : await reactQueryClient.fetchQuery({
+              queryKey: [AlbumApiNames.FetchAlbum, { id: albumID }],
+              queryFn: () => fetchAlbum({ id: albumID }),
+            })
+
+        if (!album?.album) {
+          toast.error('Failed to like album: unable to fetch album info')
+          throw new Error('unable to fetch album info')
         }
+        newAlbums.data.unshift(album.album)
 
-        // Snapshot the previous value
-        const previousData = reactQueryClient.getQueryData(key) as FetchUserAlbumsResponse
+        // Optimistically update to the new value
+        reactQueryClient.setQueriesData({ queryKey: key }, newAlbums)
+      }
 
-        const isLiked = !!previousData?.data.find(a => a.id === albumID)
-        const newAlbums = cloneDeep(previousData!)
+      reactQueryClient.setQueriesData({ queryKey: key }, newAlbums)
 
-        console.log({ isLiked })
-
-        if (isLiked) {
-          newAlbums.data = previousData.data.filter(a => a.id !== albumID)
-        } else {
-          // 从react-query缓存获取专辑
-
-          console.log({ albumID })
-
-          const albumFromCache: FetchAlbumResponse | undefined = reactQueryClient.getQueryData([
-            AlbumApiNames.FetchAlbum,
-            { id: albumID },
-          ])
-
-          console.log({ albumFromCache })
-
-          // 从api获取专辑
-          const album: FetchAlbumResponse | undefined = albumFromCache
-            ? albumFromCache
-            : await reactQueryClient.fetchQuery([AlbumApiNames.FetchAlbum, { id: albumID }])
-
-          if (!album?.album) {
-            toast.error('Failed to like album: unable to fetch album info')
-            throw new Error('unable to fetch album info')
-          }
-          newAlbums.data.unshift(album.album)
-
-          // Optimistically update to the new value
-          reactQueryClient.setQueriesData(key, newAlbums)
-        }
-
-        reactQueryClient.setQueriesData(key, newAlbums)
-
-        console.log({ newAlbums })
-
-        // Return a context object with the snapshotted value
-        return { previousData }
-      },
-      // If the mutation fails, use the context returned from onMutate to roll back
-      onSettled: (data, error, albumID, context) => {
-        if (data?.code !== 200) {
-          reactQueryClient.setQueryData(key, (context as any).previousData)
-          toast((error as any).toString())
-        }
-      },
-    }
-  )
+      // Return a context object with the snapshotted value
+      return { previousData }
+    },
+    // If the mutation fails, use the context returned from onMutate to roll back
+    onSettled: (data, error, albumID, context) => {
+      if (data?.code !== 200) {
+        reactQueryClient.setQueryData(key, (context as any).previousData)
+        toast((error as any).toString())
+      }
+    },
+  })
 }

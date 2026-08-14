@@ -11,7 +11,7 @@ const ErrorBoundary = ({ children }: { children: ReactNode }) => {
         >
           <div className='app-region-no-drag'>
             <p>Something went wrong:</p>
-            <pre className='mb-2 text-18 dark:text-white'>{error.toString()}</pre>
+            <pre className='mb-2 text-18 dark:text-white'>{String(error)}</pre>
             <div className='max-h-72 max-w-2xl overflow-scroll whitespace-pre-line rounded-24 border px-3 py-2 dark:text-white/50'>
               {componentStack?.trim()}
             </div>
@@ -25,9 +25,10 @@ const ErrorBoundary = ({ children }: { children: ReactNode }) => {
         </div>
       )}
       onError={error => {
+        const message = error instanceof Error ? error.message : String(error)
         if (
-          error.message.includes('Failed to fetch dynamically imported module') ||
-          error.message.includes('Importing a module script failed')
+          message.includes('Failed to fetch dynamically imported module') ||
+          message.includes('Importing a module script failed')
         ) {
           // on error reload
           window.location.reload()

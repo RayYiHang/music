@@ -16,7 +16,7 @@ const ArtistSongs = memo(() => {
   const [hasMore, setHasMore] = useState(true)
 
   const getData = async (pageNo: number, pageSize: number) => {
-    if (hasMore === false) return
+    if (hasMore === false) return { hasMore: false }
     const songsParams: FetchArtistSongsParams = {
       id: Number(params.id) || 0,
       // order 加上time 会导致取不到更多的歌曲

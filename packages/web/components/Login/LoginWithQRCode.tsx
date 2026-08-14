@@ -44,54 +44,53 @@ const LoginWithQRCode = () => {
     data: key,
     status: keyStatus,
     refetch: refetchKey,
-  } = useQuery(
-    ['qrCodeKey'],
-    async () => {
+  } = useQuery({
+    queryKey: ['qrCodeKey'],
+    queryFn: async () => {
       const result = await fetchLoginQrCodeKey()
       if (result.data.code !== 200) {
         throw Error(`Failed to fetch QR code key: ${result.data.code}`)
       }
       return result
     },
-    {
-      cacheTime: 0,
-      retry: true,
-      retryDelay: 500,
-      refetchOnWindowFocus: false,
-      refetchInterval: 1000 * 60 * 5, // 5 min
-    }
-  )
+    gcTime: 0,
+    retry: true,
+    retryDelay: 500,
+    refetchOnWindowFocus: false,
+    refetchInterval: 1000 * 60 * 5, // 5 min
+  })
 
-  const { data: status } = useQuery(
-    ['qrCodeStatus'],
-    async () => checkLoginQrCodeStatus({ key: key?.data?.unikey || '' }),
-    {
-      refetchInterval: 1000,
-      enabled: !!key?.data?.unikey,
-      onSuccess: status => {
-        switch (status.code) {
-          case 800:
-            refetchKey()
-            break
-          case 801:
-            // setQrCodeMessage('打开网易云音乐，扫码登录')
-            break
-          case 802:
-            // setQrCodeMessage('等待确认')
-            break
-          case 803:
-            if (!status.cookie) {
-              toast('checkLoginQrCodeStatus returned 803 without cookie')
-              break
-            }
-            setCookies(status.cookie)
-            reactQueryClient.refetchQueries([UserApiNames.FetchUserAccount])
-            uiStates.showLoginPanel = false
-            break
+  const { data: status } = useQuery({
+    queryKey: ['qrCodeStatus'],
+    queryFn: async () => checkLoginQrCodeStatus({ key: key?.data?.unikey || '' }),
+    refetchInterval: 1000,
+    enabled: !!key?.data?.unikey,
+  })
+
+  // react-query v5 removed query callbacks; watch the polled status instead.
+  useEffect(() => {
+    if (!status) return
+    switch (status.code) {
+      case 800:
+        refetchKey()
+        break
+      case 801:
+        // setQrCodeMessage('打开网易云音乐，扫码登录')
+        break
+      case 802:
+        // setQrCodeMessage('等待确认')
+        break
+      case 803:
+        if (!status.cookie) {
+          toast('checkLoginQrCodeStatus returned 803 without cookie')
+          break
         }
-      },
+        setCookies(status.cookie)
+        reactQueryClient.refetchQueries({ queryKey: [UserApiNames.FetchUserAccount] })
+        uiStates.showLoginPanel = false
+        break
     }
-  )
+  }, [status, refetchKey])
 
   const text = useMemo(
     () => (key?.data?.unikey ? `https://music.163.com/login?codekey=${key.data.unikey}` : ''),

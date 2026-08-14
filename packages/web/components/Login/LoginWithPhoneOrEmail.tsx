@@ -35,7 +35,7 @@ const LoginWithPhoneOrEmail = () => {
   const handleAfterLogin = (result: LoginWithEmailResponse | LoginWithPhoneResponse) => {
     if (result?.code !== 200) return
     setCookies(result.cookie)
-    reactQueryClient.refetchQueries([UserApiNames.FetchUserAccount])
+    reactQueryClient.refetchQueries({ queryKey: [UserApiNames.FetchUserAccount] })
     uiStates.showLoginPanel = false
   }
 
@@ -53,14 +53,15 @@ const LoginWithPhoneOrEmail = () => {
     )
   }
 
-  const doEmailLogin = useMutation(
-    () =>
+  const doEmailLogin = useMutation({
+    mutationFn: () =>
       loginWithEmail({
         email: email.trim(),
         md5_password: md5(password.trim()),
       }),
-    { onSuccess: handleAfterLogin, onSettled: handleError }
-  )
+    onSuccess: handleAfterLogin,
+    onSettled: handleError,
+  })
 
   const handleEmailLogin = () => {
     if (!email) {
@@ -80,16 +81,17 @@ const LoginWithPhoneOrEmail = () => {
     doEmailLogin.mutate()
   }
 
-  const doPhoneLogin = useMutation(
-    () => {
+  const doPhoneLogin = useMutation({
+    mutationFn: () => {
       return loginWithPhone({
         countrycode: Number(countryCode.replace('+', '').trim()) || 86,
         phone: phone.trim(),
         md5_password: md5(password.trim()),
       })
     },
-    { onSuccess: handleAfterLogin, onSettled: handleError }
-  )
+    onSuccess: handleAfterLogin,
+    onSettled: handleError,
+  })
 
   const handlePhoneLogin = () => {
     if (!countryCode || !Number(countryCode.replace('+', '').trim())) {

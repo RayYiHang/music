@@ -209,7 +209,7 @@ const CoverItem: FC<{
     y: number
   } | null>(null)
   const rootRef = useRef<HTMLDivElement>(null)
-  const rafRef = useRef<number>()
+  const rafRef = useRef<number | undefined>(undefined)
 
   // Warm the HTTP cache so hover-cards / detail navigations are instant.
   // We deliberately do NOT gate the visible <img>'s opacity on this — the

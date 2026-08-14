@@ -33,9 +33,9 @@ export const fetchFromCache = async (
 
 export function useTopPlaylist(params: FetchTopPlaylistParams) {
   const key = [PlaylistApiNames.FetchTopPlaylistParams, params]
-  return useQuery(
-    key,
-    async () => {
+  return useQuery({
+    queryKey: key,
+    queryFn: async () => {
       // fetch from cache as placeholder
       // fetchFromCache(params).then(cache => {
       //   const existsQueryData = reactQueryClient.getQueryData(key)
@@ -46,19 +46,17 @@ export function useTopPlaylist(params: FetchTopPlaylistParams) {
 
       return fetchTop(params)
     },
-    {
-      enabled: !!(params.limit && params.limit > 0 && !isNaN(Number(params.limit))),
-      refetchOnWindowFocus: true,
-    }
-  )
+    enabled: !!(params.limit && params.limit > 0 && !isNaN(Number(params.limit))),
+    refetchOnWindowFocus: true,
+  })
 }
 
 // fetch hq
 export function useHQPlaylist(params: FetchHQPlaylistParams) {
   const key = [PlaylistApiNames.FetchHQPlaylistParams, params]
-  return useQuery(
-    key,
-    async () => {
+  return useQuery({
+    queryKey: key,
+    queryFn: async () => {
       // fetch from cache as placeholder
       // const existsQueryData = reactQueryClient.getQueryData(key)
       // if (!existsQueryData) {
@@ -67,18 +65,16 @@ export function useHQPlaylist(params: FetchHQPlaylistParams) {
 
       return fetchHQ(params)
     },
-    {
-      enabled: !!(params.limit && params.limit > 0 && !isNaN(Number(params.limit))),
-      refetchOnWindowFocus: true,
-    }
-  )
+    enabled: !!(params.limit && params.limit > 0 && !isNaN(Number(params.limit))),
+    refetchOnWindowFocus: true,
+  })
 }
 
 export default function usePlaylist(params: FetchPlaylistParams) {
-  const key = [PlaylistApiNames.FetchPlaylist, params]
-  return useQuery(
-    key,
-    async () => {
+  const key = [PlaylistApiNames.FetchPlaylist, params] as const
+  return useQuery({
+    queryKey: key,
+    queryFn: async () => {
       // fetch from cache as placeholder
       fetchFromCache(params).then(cache => {
         const existsQueryData = reactQueryClient.getQueryData(key)
@@ -89,30 +85,24 @@ export default function usePlaylist(params: FetchPlaylistParams) {
 
       return fetch(params)
     },
-    {
-      enabled: !!(params.id && params.id > 0 && !isNaN(Number(params.id))),
-      refetchOnWindowFocus: true,
-    }
-  )
+    enabled: !!(params.id && params.id > 0 && !isNaN(Number(params.id))),
+    refetchOnWindowFocus: true,
+  })
 }
 
 export function fetchPlaylistWithReactQuery(params: FetchPlaylistParams) {
-  return reactQueryClient.fetchQuery(
-    [PlaylistApiNames.FetchPlaylist, params],
-    () => fetch(params),
-    {
-      staleTime: 3600000,
-    }
-  )
+  return reactQueryClient.fetchQuery({
+    queryKey: [PlaylistApiNames.FetchPlaylist, params],
+    queryFn: () => fetch(params),
+    staleTime: 3600000,
+  })
 }
 
 export async function prefetchPlaylist(params: FetchPlaylistParams) {
   if (await fetchFromCache(params)) return
-  await reactQueryClient.prefetchQuery(
-    [PlaylistApiNames.FetchPlaylist, params],
-    () => fetch(params),
-    {
-      staleTime: 3600000,
-    }
-  )
+  await reactQueryClient.prefetchQuery({
+    queryKey: [PlaylistApiNames.FetchPlaylist, params],
+    queryFn: () => fetch(params),
+    staleTime: 3600000,
+  })
 }

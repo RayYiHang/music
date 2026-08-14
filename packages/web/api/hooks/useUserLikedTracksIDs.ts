@@ -14,9 +14,9 @@ export default function useUserLikedTracksIDs() {
   const uid = user?.account?.id ?? 0
   const key = [UserApiNames.FetchUserLikedTracksIds, uid]
 
-  return useQuery(
-    key,
-    () => {
+  return useQuery({
+    queryKey: key,
+    queryFn: () => {
       const existsQueryData = reactQueryClient.getQueryData(key)
       if (!existsQueryData) {
         window.ipcRenderer
@@ -33,11 +33,9 @@ export default function useUserLikedTracksIDs() {
 
       return fetchUserLikedTracksIDs({ uid })
     },
-    {
-      enabled: !!(uid && uid !== 0),
-      refetchOnWindowFocus: true,
-    }
-  )
+    enabled: !!(uid && uid !== 0),
+    refetchOnWindowFocus: true,
+  })
 }
 
 export const useMutationLikeATrack = () => {
@@ -46,8 +44,8 @@ export const useMutationLikeATrack = () => {
   const uid = user?.account?.id ?? 0
   const key = [UserApiNames.FetchUserLikedTracksIds, uid]
 
-  return useMutation(
-    async (trackID: number) => {
+  return useMutation({
+    mutationFn: async (trackID: number) => {
       if (!trackID || userLikedSongs?.ids === undefined) {
         throw new Error('trackID is required or userLikedSongs is undefined')
       }
@@ -58,35 +56,33 @@ export const useMutationLikeATrack = () => {
       if (response.code !== 200) throw new Error((response as any).msg)
       return response
     },
-    {
-      onMutate: async trackID => {
-        // Cancel any outgoing refetches (so they don't overwrite our optimistic update)
-        await reactQueryClient.cancelQueries(key)
+    onMutate: async trackID => {
+      // Cancel any outgoing refetches (so they don't overwrite our optimistic update)
+      await reactQueryClient.cancelQueries({ queryKey: key })
 
-        // Snapshot the previous value
-        const previousData = reactQueryClient.getQueryData(key)
+      // Snapshot the previous value
+      const previousData = reactQueryClient.getQueryData(key)
 
-        // Optimistically update to the new value
-        reactQueryClient.setQueryData(key, old => {
-          const likedSongs = old as FetchUserLikedTracksIDsResponse
-          const ids = likedSongs.ids
-          const newIds = ids.includes(trackID)
-            ? ids.filter(id => id !== trackID)
-            : [...ids, trackID]
-          return {
-            ...likedSongs,
-            ids: newIds,
-          }
-        })
+      // Optimistically update to the new value
+      reactQueryClient.setQueryData(key, old => {
+        const likedSongs = old as FetchUserLikedTracksIDsResponse
+        const ids = likedSongs.ids
+        const newIds = ids.includes(trackID)
+          ? ids.filter(id => id !== trackID)
+          : [...ids, trackID]
+        return {
+          ...likedSongs,
+          ids: newIds,
+        }
+      })
 
-        // Return a context object with the snapshotted value
-        return { previousData }
-      },
-      // If the mutation fails, use the context returned from onMutate to roll back
-      onError: (err, trackID, context) => {
-        reactQueryClient.setQueryData(key, (context as any).previousData)
-        toast((err as any).toString())
-      },
-    }
-  )
+      // Return a context object with the snapshotted value
+      return { previousData }
+    },
+    // If the mutation fails, use the context returned from onMutate to roll back
+    onError: (err, trackID, context) => {
+      reactQueryClient.setQueryData(key, (context as any).previousData)
+      toast((err as any).toString())
+    },
+  })
 }

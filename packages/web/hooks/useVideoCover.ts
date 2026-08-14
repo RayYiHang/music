@@ -11,9 +11,9 @@ export default function useVideoCover(props: {
 }) {
   const { playAnimatedArtworkFromApple } = useSettings()
   const { id, name, artist, enabled = true } = props
-  return useQuery(
-    ['useVideoCover', props],
-    async () => {
+  return useQuery({
+    queryKey: ['useVideoCover', props],
+    queryFn: async () => {
       if (!id || !name || !artist) return
 
       const fromRemote = await axios.get(`/${appName.toLowerCase()}/video-cover`, {
@@ -23,10 +23,8 @@ export default function useVideoCover(props: {
         return fromRemote.data.url
       }
     },
-    {
-      enabled: !!id && !!name && !!artist && enabled && !!playAnimatedArtworkFromApple,
-      refetchOnWindowFocus: false,
-      refetchInterval: false,
-    }
-  )
+    enabled: !!id && !!name && !!artist && enabled && !!playAnimatedArtworkFromApple,
+    refetchOnWindowFocus: false,
+    refetchInterval: false,
+  })
 }

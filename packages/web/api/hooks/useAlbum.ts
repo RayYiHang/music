@@ -20,10 +20,10 @@ const fetchFromCache = async (params: FetchAlbumParams): Promise<FetchAlbumRespo
   })
 
 export default function useAlbum(params: FetchAlbumParams) {
-  const key = [AlbumApiNames.FetchAlbum, params]
-  return useQuery(
-    key,
-    () => {
+  const key = [AlbumApiNames.FetchAlbum, params] as const
+  return useQuery({
+    queryKey: key,
+    queryFn: () => {
       // fetch from cache as placeholder
       fetchFromCache(params).then(cache => {
         const existsQueryData = reactQueryClient.getQueryData(key)
@@ -34,22 +34,24 @@ export default function useAlbum(params: FetchAlbumParams) {
 
       return fetch(params)
     },
-    {
-      enabled: !!params.id,
-      staleTime: 24 * 60 * 60 * 1000, // 24 hours
-    }
-  )
+    enabled: !!params.id,
+    staleTime: 24 * 60 * 60 * 1000, // 24 hours
+  })
 }
 
 export function fetchAlbumWithReactQuery(params: FetchAlbumParams) {
-  return reactQueryClient.fetchQuery([AlbumApiNames.FetchAlbum, params], () => fetch(params), {
+  return reactQueryClient.fetchQuery({
+    queryKey: [AlbumApiNames.FetchAlbum, params],
+    queryFn: () => fetch(params),
     staleTime: Infinity,
   })
 }
 
 export async function prefetchAlbum(params: FetchAlbumParams) {
   if (await fetchFromCache(params)) return
-  await reactQueryClient.prefetchQuery([AlbumApiNames.FetchAlbum, params], () => fetch(params), {
+  await reactQueryClient.prefetchQuery({
+    queryKey: [AlbumApiNames.FetchAlbum, params],
+    queryFn: () => fetch(params),
     staleTime: Infinity,
   })
 }

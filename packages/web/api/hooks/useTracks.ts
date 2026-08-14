@@ -20,7 +20,7 @@ export async function fetchLongTracks(params:FetchTracksParams) {
   let offset = 0
   const totalIds = params.ids
   for (let i = 0; i < len; i++) {
-    const req = new Promise((resolve, reject) => {
+    const req = new Promise<FetchTracksResponse>((resolve, reject) => {
       params.ids = totalIds.slice(offset, offset + 500)
       resolve(fetchTracks(params))
     })
@@ -56,9 +56,9 @@ export async function fetchLongTracks(params:FetchTracksParams) {
 }
 
 export default function useTracks(params: FetchTracksParams) {
-  return useQuery(
-    [TrackApiNames.FetchTracks, params],
-    async () => {
+  return useQuery({
+    queryKey: [TrackApiNames.FetchTracks, params],
+    queryFn: async () => {
       // fetch from cache as initial data
       const cache = await window.ipcRenderer?.invoke(IpcChannels.GetApiCache, {
         api: CacheAPIs.Track,
@@ -69,19 +69,17 @@ export default function useTracks(params: FetchTracksParams) {
       if (cache) return cache
       return await fetchLongTracks(params)
     },
-    {
-      enabled: params.ids.length !== 0,
-      refetchInterval: false,
-      refetchOnWindowFocus: false,
-      staleTime: Infinity,
-    }
-  )
+    enabled: params.ids.length !== 0,
+    refetchInterval: false,
+    refetchOnWindowFocus: false,
+    staleTime: Infinity,
+  })
 }
 
 export function fetchTracksWithReactQuery(params: FetchTracksParams) {
-  return reactQueryClient.fetchQuery(
-    [TrackApiNames.FetchTracks, params],
-    async () => {
+  return reactQueryClient.fetchQuery({
+    queryKey: [TrackApiNames.FetchTracks, params],
+    queryFn: async () => {
       const cache = await window.ipcRenderer?.invoke(IpcChannels.GetApiCache, {
         api: CacheAPIs.Track,
         query: {
@@ -91,28 +89,24 @@ export function fetchTracksWithReactQuery(params: FetchTracksParams) {
       if (cache) return cache as FetchTracksResponse
       return fetchTracks(params)
     },
-    {
-      retry: 4,
-      retryDelay: (retryCount: number) => {
-        return retryCount * 500
-      },
-      staleTime: 86400000,
-    }
-  )
+    retry: 4,
+    retryDelay: (retryCount: number) => {
+      return retryCount * 500
+    },
+    staleTime: 86400000,
+  })
 }
 
 export function fetchAudioSourceWithReactQuery(params: FetchAudioSourceParams) {
   params.qqCookie = settings.qqCookie
   params.miguCookie = settings.miguCookie
   params.jooxCookie = settings.jooxCookie
-  return reactQueryClient.fetchQuery(
-    [TrackApiNames.FetchAudioSource, params],
-    () => {
+  return reactQueryClient.fetchQuery({
+    queryKey: [TrackApiNames.FetchAudioSource, params],
+    queryFn: () => {
       return fetchAudioSource(params)
     },
-    {
-      retry: 1,
-      staleTime: 0, // TODO: Web版1小时缓存
-    }
-  )
+    retry: 1,
+    staleTime: 0, // TODO: Web版1小时缓存
+  })
 }

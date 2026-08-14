@@ -69,9 +69,9 @@ const getAlbumsFromAPI = async () => {
 }
 
 const Discover = () => {
-  const { data: albums } = useQuery(
-    ['DiscoveryAlbums'],
-    async () => {
+  const { data: albums } = useQuery({
+    queryKey: ['DiscoveryAlbums'],
+    queryFn: async () => {
       const albumsInLocalStorageTime = localStorage.getItem('discoverAlbumsTime')
       if (
         !albumsInLocalStorageTime ||
@@ -82,12 +82,10 @@ const Discover = () => {
         return JSON.parse(localStorage.getItem('discoverAlbums') || '[]')
       }
     },
-    {
-      staleTime: 1000 * 60 * 60 * 2, // 2hr
-      refetchOnWindowFocus: false,
-      refetchInterval: 1000 * 60 * 60 * 2, // 2hr
-    }
-  )
+    staleTime: 1000 * 60 * 60 * 2, // 2hr
+    refetchOnWindowFocus: false,
+    refetchInterval: 1000 * 60 * 60 * 2, // 2hr
+  })
 
   return (
     <PageTransition disableEnterAnimation={true}>

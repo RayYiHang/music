@@ -6,10 +6,10 @@ import { useQuery } from '@tanstack/react-query'
 import reactQueryClient from '@/web/utils/reactQueryClient'
 
 export default function useSimilarArtists(params: FetchSimilarArtistsParams) {
-  const key = [ArtistApiNames.FetchSimilarArtists, params]
-  return useQuery(
-    key,
-    () => {
+  const key = [ArtistApiNames.FetchSimilarArtists, params] as const
+  return useQuery({
+    queryKey: key,
+    queryFn: () => {
       window.ipcRenderer
         ?.invoke(IpcChannels.GetApiCache, {
           api: CacheAPIs.SimilarArtist,
@@ -26,10 +26,8 @@ export default function useSimilarArtists(params: FetchSimilarArtistsParams) {
 
       return fetchSimilarArtists(params)
     },
-    {
-      enabled: !!params.id && params.id > 0 && !isNaN(Number(params.id)),
-      staleTime: 5 * 60 * 1000, // 5 mins
-      retry: 0,
-    }
-  )
+    enabled: !!params.id && params.id > 0 && !isNaN(Number(params.id)),
+    staleTime: 5 * 60 * 1000, // 5 mins
+    retry: 0,
+  })
 }

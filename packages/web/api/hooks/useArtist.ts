@@ -14,10 +14,10 @@ const fetchFromCache = async (
   })
 
 export default function useArtist(params: FetchArtistParams) {
-  const key = [ArtistApiNames.FetchArtist, params]
-  return useQuery(
-    key,
-    () => {
+  const key = [ArtistApiNames.FetchArtist, params] as const
+  return useQuery({
+    queryKey: key,
+    queryFn: () => {
       // fetch from cache as placeholder
       fetchFromCache(params).then(cache => {
         const existsQueryData = reactQueryClient.getQueryData(key)
@@ -28,30 +28,24 @@ export default function useArtist(params: FetchArtistParams) {
 
       return fetchArtist(params)
     },
-    {
-      enabled: !!params.id && params.id > 0 && !isNaN(Number(params.id)),
-      staleTime: 5 * 60 * 1000, // 5 mins
-    }
-  )
+    enabled: !!params.id && params.id > 0 && !isNaN(Number(params.id)),
+    staleTime: 5 * 60 * 1000, // 5 mins
+  })
 }
 
 export function fetchArtistWithReactQuery(params: FetchArtistParams) {
-  return reactQueryClient.fetchQuery(
-    [ArtistApiNames.FetchArtist, params],
-    () => fetchArtist(params),
-    {
-      staleTime: Infinity,
-    }
-  )
+  return reactQueryClient.fetchQuery({
+    queryKey: [ArtistApiNames.FetchArtist, params],
+    queryFn: () => fetchArtist(params),
+    staleTime: Infinity,
+  })
 }
 
 export async function prefetchArtist(params: FetchArtistParams) {
   if (await fetchFromCache(params)) return
-  await reactQueryClient.prefetchQuery(
-    [ArtistApiNames.FetchArtist, params],
-    () => fetchArtist(params),
-    {
-      staleTime: Infinity,
-    }
-  )
+  await reactQueryClient.prefetchQuery({
+    queryKey: [ArtistApiNames.FetchArtist, params],
+    queryFn: () => fetchArtist(params),
+    staleTime: Infinity,
+  })
 }

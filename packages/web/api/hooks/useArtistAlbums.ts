@@ -6,10 +6,10 @@ import { useQuery } from '@tanstack/react-query'
 import reactQueryClient from '@/web/utils/reactQueryClient'
 
 export default function useArtistAlbums(params: FetchArtistAlbumsParams) {
-  const key = [ArtistApiNames.FetchArtistAlbums, params]
-  return useQuery(
-    key,
-    async () => {
+  const key = [ArtistApiNames.FetchArtistAlbums, params] as const
+  return useQuery({
+    queryKey: key,
+    queryFn: async () => {
       // fetch from cache as placeholder
       window.ipcRenderer
         ?.invoke(IpcChannels.GetApiCache, {
@@ -27,9 +27,7 @@ export default function useArtistAlbums(params: FetchArtistAlbumsParams) {
 
       return fetchArtistAlbums(params)
     },
-    {
-      enabled: !!params.id && params.id !== 0,
-      staleTime: 3600000,
-    }
-  )
+    enabled: !!params.id && params.id !== 0,
+    staleTime: 3600000,
+  })
 }

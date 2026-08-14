@@ -144,7 +144,7 @@ const Controls = ({
   onMouseOver,
   onMouseOut,
 }: {
-  videoRef: React.RefObject<HTMLVideoElement>
+  videoRef: React.RefObject<HTMLVideoElement | null>
   toggleFullscreen: () => void
   togglePlay: () => void
   onMouseOver: () => void

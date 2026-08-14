@@ -5,9 +5,9 @@ import { useInfiniteQuery } from '@tanstack/react-query'
 import { memo, useCallback, useMemo } from 'react'
 
 const Hot = ({ cat }: { cat: string }) => {
-  const { data, fetchNextPage, hasNextPage, isFetchingNextPage, isLoading } = useInfiniteQuery(
-    ['hqPlaylist', cat],
-    async ({ pageParam = 0 }) => {
+  const { data, fetchNextPage, hasNextPage, isFetchingNextPage, isLoading } = useInfiniteQuery({
+    queryKey: ['hqPlaylist', cat],
+    queryFn: async ({ pageParam = 0 }) => {
       const resp = await fetchHQPlaylist({
         cat,
         limit: 50,
@@ -19,16 +19,15 @@ const Hot = ({ cat }: { cat: string }) => {
         lastUpdateTime: resp.playlists[resp.playlists.length - 1]?.updateTime || 0,
       }
     },
-    {
-      getNextPageParam: lastPage => {
-        if (!lastPage.hasMore) return undefined
-        return lastPage.lastUpdateTime
-      },
-      refetchOnWindowFocus: false,
-      refetchInterval: 1000 * 60 * 60,
-      refetchOnMount: false,
-    }
-  )
+    initialPageParam: 0,
+    getNextPageParam: lastPage => {
+      if (!lastPage.hasMore) return undefined
+      return lastPage.lastUpdateTime
+    },
+    refetchOnWindowFocus: false,
+    refetchInterval: 1000 * 60 * 60,
+    refetchOnMount: false,
+  })
 
   // Stable identity: flatMap allocates a fresh array on every render, which
   // makes Virtuoso treat the list as new and re-key visible rows on every

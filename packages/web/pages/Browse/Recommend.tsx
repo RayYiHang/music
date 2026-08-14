@@ -11,26 +11,21 @@ interface RecommendResult {
 }
 
 const Recommend = memo(() => {
-  const { data: dailyRecommendPlaylists, isLoading: isLoadingDaily } = useQuery<
-    RecommendResult
-  >(
-    [PlaylistApiNames.FetchDailyRecommendPlaylists],
-    () => fetchDailyRecommendPlaylists(),
-    {
+  const { data: dailyRecommendPlaylists, isLoading: isLoadingDaily } =
+    useQuery<RecommendResult>({
+      queryKey: [PlaylistApiNames.FetchDailyRecommendPlaylists],
+      queryFn: () => fetchDailyRecommendPlaylists(),
       refetchOnWindowFocus: false,
       refetchInterval: 1000 * 60 * 60,
       refetchOnMount: false,
-    }
-  )
-  const { data: recommendedPlaylists, isLoading: isLoading } = useQuery<RecommendResult>(
-    [PlaylistApiNames.FetchRecommendedPlaylists, { limit: 500 }],
-    () => fetchRecommendedPlaylists({ limit: 500 }),
-    {
-      refetchOnWindowFocus: false,
-      refetchInterval: 1000 * 60 * 60,
-      refetchOnMount: false,
-    }
-  )
+    })
+  const { data: recommendedPlaylists, isLoading: isLoading } = useQuery<RecommendResult>({
+    queryKey: [PlaylistApiNames.FetchRecommendedPlaylists, { limit: 500 }],
+    queryFn: () => fetchRecommendedPlaylists({ limit: 500 }),
+    refetchOnWindowFocus: false,
+    refetchInterval: 1000 * 60 * 60,
+    refetchOnMount: false,
+  })
 
   const isLoadingData = isLoadingDaily || isLoading
 

@@ -1,6 +1,6 @@
 import { useState, useEffect, RefObject, useRef } from 'react';
 
-const useIntersectionObserver = (element: RefObject<Element>): { onScreen: boolean } => {
+const useIntersectionObserver = (element: RefObject<Element | null>): { onScreen: boolean } => {
   const [onScreen, setOnScreen] = useState(false);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
 

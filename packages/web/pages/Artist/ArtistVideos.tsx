@@ -19,7 +19,7 @@ const ArtistVideos = memo(() => {
 
       <div className='grid grid-cols-3 gap-6'>
         {videos?.mvs?.slice(0, 6)?.map(video => (
-          <div key={video.id} onClick={() => (uiStates.playingVideoID = video.id)}>
+          <div key={video.id} onClick={() => (uiStates.playingVideoID = String(video.id))}>
             <img
               src={video.imgurl16v9}
               className='aspect-video w-full rounded-24 border border-white/5 object-contain'

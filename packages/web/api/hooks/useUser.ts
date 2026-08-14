@@ -9,9 +9,9 @@ import reactQueryClient from '@/web/utils/reactQueryClient'
 
 export default function useUser() {
   const key = [UserApiNames.FetchUserAccount]
-  return useQuery(
-    key,
-    async () => {
+  return useQuery({
+    queryKey: key,
+    queryFn: async () => {
       const existsQueryData = reactQueryClient.getQueryData(key)
       if (!existsQueryData) {
         window.ipcRenderer
@@ -25,35 +25,31 @@ export default function useUser() {
 
       return fetchUserAccount()
     },
-    {
-      refetchOnWindowFocus: true,
-    }
-  )
+    refetchOnWindowFocus: true,
+  })
 }
 
 export function useRefreshCookie() {
   const user = useUser()
-  return useQuery(
-    [UserApiNames.RefreshCookie],
-    async () => {
+  return useQuery({
+    queryKey: [UserApiNames.RefreshCookie],
+    queryFn: async () => {
       const result = await refreshCookie()
       if (result?.code === 200) {
         setCookies(result.cookie)
       }
       return result
     },
-    {
-      refetchInterval: 1000 * 60 * 30,
-      enabled: !!user.data?.profile?.userId,
-    }
-  )
+    refetchInterval: 1000 * 60 * 30,
+    enabled: !!user.data?.profile?.userId,
+  })
 }
 
 export function useDailyCheckIn() {
   const user = useUser()
-  return useQuery(
-    [UserApiNames.DailyCheckIn],
-    async () => {
+  return useQuery({
+    queryKey: [UserApiNames.DailyCheckIn],
+    queryFn: async () => {
       try {
         Promise.allSettled([dailyCheckIn(0), dailyCheckIn(1)])
         return 'ok'
@@ -61,18 +57,16 @@ export function useDailyCheckIn() {
         return 'error'
       }
     },
-    {
-      refetchInterval: 1000 * 60 * 30,
-      enabled: !!user.data?.profile?.userId,
-    }
-  )
+    refetchInterval: 1000 * 60 * 30,
+    enabled: !!user.data?.profile?.userId,
+  })
 }
 
 // 判断是否登录,条件是否保存了用户id
 export const useIsLoggedIn = () => {
-  const { data, isLoading } = useUser()
+  const { data, isPending, isFetching } = useUser()
 
-  if (isLoading) return true
+  if (isPending && isFetching) return true
   return !!data?.profile?.userId
 }
 
@@ -80,9 +74,9 @@ export const logout = async () => {
   await logoutAPI()
   removeAllCookies()
   await window.ipcRenderer?.invoke(IpcChannels.Logout)
-  await reactQueryClient.refetchQueries([UserApiNames.FetchUserAccount])
+  await reactQueryClient.refetchQueries({ queryKey: [UserApiNames.FetchUserAccount] })
 }
 
 export const useMutationLogout = () => {
-  return useMutation(logout)
+  return useMutation({ mutationFn: logout })
 }

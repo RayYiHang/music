@@ -108,7 +108,7 @@ const Lyrics = memo(() => {
   const { lyric: lyrics, tlyric: tlyrics, yrc, romalrc } = lyricParser(lyricsResponse)
 
   const userScrollingRef = useRef(false)
-  const scrollTimeoutRef = useRef<ReturnType<typeof setTimeout>>()
+  const scrollTimeoutRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
 
   const hasYrc = yrc.length > 0
 

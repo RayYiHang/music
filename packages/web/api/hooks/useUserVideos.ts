@@ -18,9 +18,9 @@ export default function useUserVideos() {
   const uid = user?.account?.id ?? 0
   const key = [UserApiNames.FetchUserVideos, uid]
 
-  return useQuery(
-    key,
-    () => {
+  return useQuery({
+    queryKey: key,
+    queryFn: () => {
       const existsQueryData = reactQueryClient.getQueryData(key)
       if (!existsQueryData) {
         window.ipcRenderer
@@ -37,11 +37,9 @@ export default function useUserVideos() {
 
       return fetchUserVideos()
     },
-    {
-      enabled: !!(uid && uid !== 0),
-      refetchOnWindowFocus: true,
-    }
-  )
+    enabled: !!(uid && uid !== 0),
+    refetchOnWindowFocus: true,
+  })
 }
 
 export const useMutationLikeAVideo = () => {
@@ -50,8 +48,8 @@ export const useMutationLikeAVideo = () => {
   const uid = user?.account?.id ?? 0
   const key = [UserApiNames.FetchUserVideos, uid]
 
-  return useMutation(
-    async (videoID: string | number) => {
+  return useMutation({
+    mutationFn: async (videoID: string | number) => {
       if (!videoID || userVideos?.data === undefined) {
         throw new Error('playlist id is required or userPlaylists is undefined')
       }
@@ -62,10 +60,8 @@ export const useMutationLikeAVideo = () => {
       if (response.code !== 200) throw new Error((response as any).msg)
       return response
     },
-    {
-      onSuccess: () => {
-        refetch()
-      },
-    }
-  )
+    onSuccess: () => {
+      refetch()
+    },
+  })
 }

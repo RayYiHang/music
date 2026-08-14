@@ -6,9 +6,9 @@ import { useQuery } from '@tanstack/react-query'
 import reactQueryClient from '@/web/utils/reactQueryClient'
 
 export default function useArtists(ids: number[]) {
-  return useQuery(
-    ['fetchArtists', ids],
-    () =>
+  return useQuery({
+    queryKey: ['fetchArtists', ids],
+    queryFn: () =>
       Promise.all(
         ids.map(async id => {
           const queryData = reactQueryClient.getQueryData([ArtistApiNames.FetchArtist, { id }])
@@ -25,9 +25,7 @@ export default function useArtists(ids: number[]) {
           return fetchArtist({ id })
         })
       ),
-    {
-      enabled: !!ids && ids.length > 0,
-      staleTime: 5 * 60 * 1000, // 5 mins
-    }
-  )
+    enabled: !!ids && ids.length > 0,
+    staleTime: 5 * 60 * 1000, // 5 mins
+  })
 }

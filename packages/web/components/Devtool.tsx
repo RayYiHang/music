@@ -15,18 +15,7 @@ const Devtool = () => {
 
   return (
     <Suspense fallback={null}>
-      <ReactQueryDevtools
-        initialIsOpen={false}
-        toggleButtonProps={{
-          style: {
-            position: 'fixed',
-            top: 36,
-            right: 148,
-            bottom: 'atuo',
-            left: 'auto',
-          },
-        }}
-      />
+      <ReactQueryDevtools initialIsOpen={false} buttonPosition='top-right' />
     </Suspense>
   )
 }

@@ -11,9 +11,9 @@ const Top = ({ cat }: { cat: string }) => {
     hasNextPage,
     isFetchingNextPage,
     isLoading,
-  } = useInfiniteQuery(
-    ['topPlaylist', cat],
-    async ({ pageParam = 1 }) => {
+  } = useInfiniteQuery({
+    queryKey: ['topPlaylist', cat],
+    queryFn: async ({ pageParam = 1 }) => {
       const resp = await fetchTopPlaylist({
         cat,
         limit: 40,
@@ -24,16 +24,15 @@ const Top = ({ cat }: { cat: string }) => {
         hasMore: resp.more,
       }
     },
-    {
-      getNextPageParam: (lastPage, pages) => {
-        if (!lastPage.hasMore) return undefined
-        return pages.length + 1
-      },
-      refetchOnWindowFocus: false,
-      refetchInterval: 1000 * 60 * 60,
-      refetchOnMount: false,
-    }
-  )
+    initialPageParam: 1,
+    getNextPageParam: (lastPage, pages) => {
+      if (!lastPage.hasMore) return undefined
+      return pages.length + 1
+    },
+    refetchOnWindowFocus: false,
+    refetchInterval: 1000 * 60 * 60,
+    refetchOnMount: false,
+  })
 
   // Stable identity — see comment in Hot.tsx / Recommend.tsx.
   const dataSource = useMemo(
