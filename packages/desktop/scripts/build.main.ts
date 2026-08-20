@@ -1,4 +1,4 @@
-import { build } from 'esbuild'
+import { build, context } from 'esbuild'
 import ora from 'ora'
 import { builtinModules } from 'module'
 import electron from 'electron'
@@ -61,25 +61,43 @@ if (argv.watch) {
         process.exit(1)
       } else {
         let child
-        build({
+        // esbuild 0.17+ replaced build({watch}) with the context() API;
+        // rebuild notification goes through an onEnd plugin.
+        context({
           ...options,
-          watch: {
-            onRebuild(error) {
-              if (error) {
-                console.error(pc.red('Rebuild Failed:'), error)
-              } else {
-                console.log(pc.green('Rebuild Succeeded'))
-                if (child) child.kill()
-                child = runApp()
-              }
-            },
-          },
           sourcemap: true,
-        }).then(() => {
-          console.log(pc.yellow(`⚡ Run App`))
-          if (child) child.kill()
-          child = runApp()
+          plugins: [
+            {
+              name: 'rebuild-notify',
+              setup(build) {
+                let first = true
+                build.onEnd(result => {
+                  if (first) {
+                    first = false
+                    return
+                  }
+                  if (result.errors.length > 0) {
+                    console.error(pc.red('Rebuild Failed:'), result.errors)
+                  } else {
+                    console.log(pc.green('Rebuild Succeeded'))
+                    if (child) child.kill()
+                    child = runApp()
+                  }
+                })
+              },
+            },
+          ],
         })
+          .then(async ctx => {
+            await ctx.watch()
+            console.log(pc.yellow(`⚡ Run App`))
+            if (child) child.kill()
+            child = runApp()
+          })
+          .catch(error => {
+            console.log(pc.red('Watch context failed'), error)
+            process.exit(1)
+          })
       }
     }
   )

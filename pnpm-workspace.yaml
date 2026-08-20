@@ -1,11 +1,37 @@
 packages:
   - 'packages/*'
 
+# pnpm 11 no longer reads these from .npmrc — settings live here.
+# Hoisted linker is required: electron-builder collects prod deps from the
+# repo-root node_modules when packaging desktop.
+nodeLinker: hoisted
+
+allowBuilds:
+  '@prisma/client': true
+  '@prisma/engines': true
+  '@swc/core': true
+  better-sqlite3: false
+  electron-winstaller: true
+  esbuild: true
+  fast-folder-size: true
+  prisma: true
+
 # pnpm ≥10 reads this from pnpm-workspace.yaml instead of the root
 # package.json "pnpm" field. better-sqlite3 must NOT build at install time:
-# the root 9.2.2 copy is Electron-only (electron-rebuild in desktop postinstall
-# produces tmp/bin binaries; it cannot compile against Node ≥23 V8 headers),
-# and the server's nested v12 copy is provisioned by
-# packages/server/scripts/install-sqlite3.js instead.
+# desktop provisions Electron-ABI binaries via scripts/build.sqlite3.ts into
+# tmp/bin, and the server fetches its Node-ABI binding via
+# packages/server/scripts/install-sqlite3.js.
 neverBuiltDependencies:
   - better-sqlite3
+
+# pnpm 11 requires an explicit allow-list for dep install scripts
+# (pnpm approve-builds is interactive and doesn't survive CI/agents).
+# All trusted, previously-built deps.
+onlyBuiltDependencies:
+  - '@prisma/client'
+  - '@prisma/engines'
+  - '@swc/core'
+  - electron-winstaller
+  - esbuild
+  - fast-folder-size
+  - prisma

@@ -36,7 +36,6 @@
   "devDependencies": {
     "@types/node": "^18.19.130",
     "concurrently": "^7.6.0",
-    "esbuild": "^0.16.17",
     "fastify-tsconfig": "^1.0.1",
     "prisma": "^6.19.3",
     "ts-node": "^10.9.2",

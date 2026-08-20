@@ -41,8 +41,10 @@ module.exports = {
       //   arch: ['x64'],
       // },
     ],
-    publisherName: 'feng',
     icon: 'build/icons/icon.png',
+    signtoolOptions: {
+      publisherName: 'feng',
+    },
   },
   nsis: {
     oneClick: false,
@@ -117,6 +119,11 @@ module.exports = {
     '!**/*.{map,debug.min.js}',
     '!**/unlock.js',
     '!**/node_modules/*',
+    // Dead weight: prod loads the binding from Resources/bin (afterPack copySQLite3).
+    // Both-arch prebuilds here would also break the universal mac build
+    // (@electron/universal rejects Mach-O files that are identical across x64/arm64 builds).
+    '!**/node_modules/better-sqlite3/bin/**',
+    '!**/node_modules/better-sqlite3/build/**',
 
     {
       from: './dist',

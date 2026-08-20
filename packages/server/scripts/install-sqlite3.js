@@ -27,11 +27,16 @@ try {
 
 const resolveBin = file => {
   const candidates = ['bin.js', 'bin/node-gyp.js', 'bin/node-gyp-bin.js']
+  // moduleDir is the better-sqlite3 install dir; its bin deps (prebuild-install,
+  // node-gyp) resolve relative to it under both hoisted and isolated linkers.
+  const searchPaths = [path.join(moduleDir, 'node_modules'), moduleDir]
   for (const c of candidates) {
-    try {
-      return require.resolve(`${file}/${c}`)
-    } catch {
-      // try next
+    for (const base of searchPaths) {
+      try {
+        return require.resolve(`${file}/${c}`, { paths: [base] })
+      } catch {
+        // try next location
+      }
     }
   }
   throw new Error(`cannot resolve bin for ${file}`)
