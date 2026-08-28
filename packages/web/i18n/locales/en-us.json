@@ -68,10 +68,13 @@
     "added-to-playlist": "Added to playlist",
     "remove-from-liked-tracks": "Removed from liked tracks",
     "removed-from-library": "Removed from library",
-    "removed-from-playlist": "Removed from playlist"
+    "removed-from-playlist": "Removed from playlist",
+    "download-started": "Download started",
+    "download-failed": "Download failed (no available audio source)"
   },
   "search": {
     "search": "Search",
+    "hot-search": "Hot Searches",
     "all": "All",
     "best-match": "Best Match",
     "artist": "Artists",
@@ -106,6 +109,8 @@
     "player": "Player",
     "title-language": "Language",
     "title-netease-music": "Netease Music",
+    "title-download": "Download",
+    "show-download-actions": "Show download actions in track lists and context menus",
     "general-choose-language": "Choose Language",
     "play-animated-artwork-from-apple-music": "Play Animated Artwork from Apple Music",
     "priority-display-description-from-apple-music": "Priority Display of Album/Artist Description from Apple Music",
@@ -158,7 +163,8 @@
     "unfollowed": "Unfollowed",
     "add-to-library": "Add to library",
     "remove-from-library": "Remove from library",
-    "copy-r3playx-link": "Copy R3PLAYX Link"
+    "copy-r3playx-link": "Copy R3PLAYX Link",
+    "download": "Download"
   },
   "toast": {},
   "artist": {
@@ -166,6 +172,8 @@
     "latest-releases": "Latest Releases",
     "popular": "Popular",
     "all-songs": "All Songs",
+    "expand": "Expand",
+    "collapse": "Collapse",
     "synthesis": "Synthesis"
   },
   "coverrow": {

@@ -3,6 +3,7 @@ export enum SearchApiNames {
   CloudSearch = 'cloudSearch',
   MultiMatchSearch = 'multiMatchSearch',
   FetchSearchSuggestions = 'fetchSearchSuggestions',
+  FetchSearchHot = 'fetchSearchHot',
 }
 
 // 搜索
@@ -115,4 +116,17 @@ export interface FetchSearchSuggestionsResponse {
     songs?: Track[]
     order: Array<'songs' | 'artists' | 'albums' | 'playlists'>
   }
+}
+
+// 热搜列表（/search/hot/detail）
+export interface FetchSearchHotResponse {
+  code: number
+  data: {
+    searchWord: string
+    score: number
+    content?: string
+    iconUrl?: string
+    iconType?: number
+    url?: string
+  }[]
 }

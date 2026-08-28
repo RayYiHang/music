@@ -68,10 +68,13 @@
     "added-to-playlist": "已添加到歌单",
     "remove-from-liked-tracks": "已从喜欢的歌曲中移除",
     "removed-from-library": "已从音乐库中移除",
-    "removed-from-playlist": "已从歌单中移除"
+    "removed-from-playlist": "已从歌单中移除",
+    "download-started": "开始下载",
+    "download-failed": "下载失败（可能无可用音源）"
   },
   "search": {
     "search": "搜索",
+    "hot-search": "热搜榜",
     "all": "全部",
     "best-match": "最佳匹配",
     "artist": "艺人",
@@ -106,6 +109,8 @@
     "player": "播放",
     "title-language": "语言",
     "title-netease-music": "网易云音乐",
+    "title-download": "下载",
+    "show-download-actions": "在歌曲列表和右键菜单中显示下载",
     "general-choose-language": "选择语言",
     "play-animated-artwork-from-apple-music": "播放来自 Apple Music 的动画作品",
     "priority-display-description-from-apple-music": "优先展示来自Apple Music的专辑/艺术家描述",
@@ -158,7 +163,8 @@
     "unfollowed": "已取消关注",
     "add-to-library": "添加到音乐库",
     "remove-from-library": "从音乐库中移除",
-    "copy-r3playx-link": "复制R3PLAYX链接"
+    "copy-r3playx-link": "复制R3PLAYX链接",
+    "download": "下载"
   },
   "toast": {},
   "artist": {
@@ -166,6 +172,8 @@
     "latest-releases": "最新发行",
     "popular": "热门歌曲",
     "all-songs": "所有歌曲",
+    "expand": "展开",
+    "collapse": "收起",
     "synthesis": "综合信息"
   },
   "coverrow": {

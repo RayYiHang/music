@@ -819,6 +819,12 @@ input[type='number']::-webkit-outer-spin-button {
   background-size: cover;
   background-position: center;
   transition: background-image 2s ease-in-out;
+  /* Pin the filter layer: without this, GPU tile-memory pressure from
+     long virtualized lists during scroll evicts these full-window blur
+     layers and the compositor re-rasters them async — visible as the
+     background blur flashing off. Promotion cost is bounded (two
+     static layers that already exist) versus eviction churn. */
+  will-change: filter;
 }
 
 .breathing-bg__pulse {
@@ -850,26 +856,21 @@ input[type='number']::-webkit-outer-spin-button {
 /*                                                                    */
 /* `top-bar-frost` carries the backdrop-filter for every topbar      */
 /* variant (breathing-light, cover background, plain gradient).      */
-/* While any scroll container is scrolling (useScrollIdle toggles    */
-/* html[data-scrolling]), the blur radius is halved instead of the   */
-/* filter being switched off: cost scales with radius × area, the    */
-/* topbar is a thin strip, and a radius change under moving content  */
-/* is imperceptible — the old "blur off + black tint" swap produced  */
-/* a visible dark flash on every scroll.                             */
+/* The blur is kept CONSTANT during scrolling: both the old          */
+/* "blur off + black tint" swap and the later "halve the radius"     */
+/* variant changed the backdrop-filter value per scroll gesture, and */
+/* each value change re-creates the backdrop readback — on a         */
+/* transparent Electron window that repaint reads as a visible       */
+/* flash/flicker of the frost. A thin strip at constant radius is    */
+/* cheap enough to leave alone.                                      */
 /* ---------------------------------------------------------------- */
 .top-bar-frost {
   backdrop-filter: blur(16px) saturate(1.2);
   -webkit-backdrop-filter: blur(16px) saturate(1.2);
-  /* Cheap tint keeps the bar readable even before the filter kicks
-     in, and makes the scrolling↔rest radius change seamless. */
+  /* Cheap tint keeps the bar readable even before the filter kicks in. */
   background-color: rgba(255, 255, 255, 0.32);
 }
 
 .dark .top-bar-frost {
   background-color: rgba(0, 0, 0, 0.32);
-}
-
-html[data-scrolling] .top-bar-frost {
-  backdrop-filter: blur(8px) saturate(1.1);
-  -webkit-backdrop-filter: blur(8px) saturate(1.1);
 }

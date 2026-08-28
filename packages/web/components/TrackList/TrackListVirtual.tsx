@@ -9,6 +9,8 @@ import { Fragment, memo, useCallback, useMemo } from 'react'
 import { NavLink } from 'react-router-dom'
 import { useSnapshot } from 'valtio'
 import React from 'react'
+import settings from '@/web/states/settings'
+import { downloadTrack } from '@/web/utils/download'
 import { Virtuoso } from 'react-virtuoso'
 
 
@@ -26,10 +28,11 @@ const Track = memo(({
   state: PlayerState
   onClick: (e: React.MouseEvent<HTMLElement>, trackID: number) => void
 }) => {
+  const { showDownloadActions } = useSnapshot(settings)
   return (
     <div
       className={cx(
-        'p-1 mb-3 grid duration-300 hover:bg-black/5 dark:hover:bg-white/5 rounded-12',
+        'group p-1 mb-3 grid duration-300 hover:bg-black/5 dark:hover:bg-white/5 rounded-12',
         css`
           grid-template-columns: 3fr 2fr 1fr;
         `
@@ -97,6 +100,18 @@ const Track = memo(({
 
       {/* Duration */}
       <div className='line-clamp-1 flex items-center justify-end text-14 font-bold'>
+        {/* Download — opt-in via settings.showDownloadActions */}
+        {showDownloadActions && track && (
+          <button
+            className='mr-2 flex h-8 w-8 items-center justify-center rounded-full opacity-0 transition-opacity duration-300 group-hover:opacity-100 hover:bg-black/30 dark:hover:bg-white/30'
+            onClick={e => {
+              e.stopPropagation()
+              downloadTrack(track.id)
+            }}
+          >
+            <Icon name='download' className='h-4 w-4' />
+          </button>
+        )}
         {formatDuration(track?.dt || 0, 'en-US', 'hh:mm:ss')}
       </div>
     </div>

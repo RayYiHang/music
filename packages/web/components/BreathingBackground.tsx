@@ -1,4 +1,4 @@
-import { memo, useEffect, useRef } from 'react'
+import { memo, useEffect, useRef, useState } from 'react'
 import { useSnapshot } from 'valtio'
 import player from '@/web/states/player'
 import settings, { isLowPowerDevice } from '@/web/states/settings'
@@ -28,6 +28,29 @@ const BreathingBackground = memo(() => {
   const rootRef = useRef<HTMLDivElement>(null)
   const lastVolRef = useRef<string | null>(null)
   const lowPower = autoLowPowerMode && isLowPowerDevice()
+
+  // Preload-then-swap: swapping `background-image` to an undecoded URL
+  // drops the old paint immediately — on a transparent window the gap
+  // shows the desktop for a second or more. Keep painting the previous
+  // cover until the new one has decoded (same pattern as NowPlaying
+  // Cover). On load failure the previous cover simply stays.
+  const [paintedCover, setPaintedCover] = useState('')
+  useEffect(() => {
+    const src = coverUrl ? resizeImage(coverUrl, 'xs') : ''
+    if (!src) {
+      setPaintedCover('')
+      return
+    }
+    let cancelled = false
+    const img = new Image()
+    img.onload = () => {
+      if (!cancelled) setPaintedCover(src)
+    }
+    img.src = src
+    return () => {
+      cancelled = true
+    }
+  }, [coverUrl])
 
   useEffect(() => {
     if (!enableBreathingEffect) return
@@ -62,13 +85,13 @@ const BreathingBackground = memo(() => {
         } as React.CSSProperties
       }
     >
-      {coverUrl && (
+      {paintedCover && (
         <>
           {/* Quiet layer — static filter, rasterized once. */}
           <div
             className='breathing-bg__cover absolute inset-0'
             style={{
-              backgroundImage: `url(${resizeImage(coverUrl, 'xs')})`,
+              backgroundImage: `url(${paintedCover})`,
             }}
           />
           {/* Loud layer — same blurred cover with full punch, faded in
@@ -77,7 +100,7 @@ const BreathingBackground = memo(() => {
             <div
               className='breathing-bg__pulse absolute inset-0'
               style={{
-                backgroundImage: `url(${resizeImage(coverUrl, 'xs')})`,
+                backgroundImage: `url(${paintedCover})`,
               }}
             />
           )}

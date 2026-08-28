@@ -11,6 +11,7 @@ function General() {
       <Language />
       <AppleMusic />
       <NeteaseMusic />
+      <Download />
       <CloseWindow />
     </div>
   )
@@ -82,6 +83,24 @@ function NeteaseMusic() {
               persistedUiStates.librarySelectedTab = 'albums'
             }
           }}
+        />
+      </Option>
+    </div>
+  )
+}
+
+function Download() {
+  const { t } = useTranslation()
+
+  const { showDownloadActions } = useSnapshot(settings)
+  return (
+    <div className='mt-7 mb-12'>
+      <BlockTitle>{t`settings.title-download`}</BlockTitle>
+      <Option>
+        <OptionText>{t`settings.show-download-actions`}</OptionText>
+        <Switch
+          enabled={showDownloadActions}
+          onChange={v => (settings.showDownloadActions = v)}
         />
       </Option>
     </div>

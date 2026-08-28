@@ -8,6 +8,7 @@ import MenuBar from './MenuBar'
 import Topbar from './Topbar/TopbarMobile'
 import { isIOS, isIosPwa, isPWA, isSafari } from '@/web/utils/common'
 import Login from './Login'
+import SearchModal from './Search/SearchModal'
 import { useLocation } from 'react-router-dom'
 import PlayingNext from './PlayingNextMobile'
 import ContextMenus from './ContextMenus/ContextMenus'
@@ -64,6 +65,7 @@ const LayoutMobile = () => {
           </div>
 
           <Login />
+          <SearchModal />
           <ContextMenus />
 
           {/* Notch background */}

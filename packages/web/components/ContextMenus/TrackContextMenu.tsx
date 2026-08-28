@@ -20,6 +20,8 @@ import Image from '../Image'
 import { resizeImage } from '@/web/utils/common'
 import { cx } from '@emotion/css'
 import { addSongToPlayList } from '../../api/playlist'
+import settings from '@/web/states/settings'
+import { downloadTrack } from '@/web/utils/download'
 
 const Playlist = ({ playlist, datasourceID }: { playlist: Playlist; datasourceID: Number }) => {
   const { t } = useTranslation()
@@ -59,6 +61,7 @@ const TrackContextMenu = () => {
   const [, copyToClipboard] = useCopyToClipboard()
 
   const { type, dataSourceID, target, cursorPosition, options } = useSnapshot(contextMenus)
+  const { showDownloadActions } = useSnapshot(settings)
   const likeATrack = useMutationLikeATrack()
   const loggedIn = useIsLoggedIn()
   const { data: playlists } = useUserPlaylists()
@@ -162,6 +165,17 @@ const TrackContextMenu = () => {
                 },
               ],
             },
+            // Download entry is opt-in: hidden unless the user enables it in
+            // settings (`showDownloadActions`, default off).
+            ...(showDownloadActions
+              ? [
+                  {
+                    type: 'item' as const,
+                    label: t`context-menu.download`,
+                    onClick: () => downloadTrack(Number(dataSourceID)),
+                  },
+                ]
+              : []),
             {
               type: 'submenu',
               label: t`context-menu.share`,

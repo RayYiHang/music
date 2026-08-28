@@ -3,6 +3,7 @@ import { proxy } from 'valtio'
 
 interface UIStates {
   showLoginPanel: boolean
+  showSearchModal: boolean
   mobileShowPlayingNext: boolean
   blurBackgroundImage: string | null
   fullscreen: boolean
@@ -12,6 +13,7 @@ interface UIStates {
 
 const initUIStates: UIStates = {
   showLoginPanel: false,
+  showSearchModal: false,
   mobileShowPlayingNext: false,
   blurBackgroundImage: null,
   fullscreen: false,

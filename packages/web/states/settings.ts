@@ -31,6 +31,7 @@ interface Settings {
   showDesktopLyrics: boolean
   keyboardShortcuts: KeyboardShortcutSettings
   showTrackListName: boolean
+  showDownloadActions: boolean
   enableBreathingEffect: boolean
   autoLowPowerMode: boolean
 }
@@ -72,6 +73,7 @@ const initSettings: Settings = {
   showDesktopLyrics: false,
   keyboardShortcuts: getKeyboardShortcutDefaultSettings(),
   showTrackListName: false,
+  showDownloadActions: false,
   enableBreathingEffect: true,
   autoLowPowerMode: true,
 }

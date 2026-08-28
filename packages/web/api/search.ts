@@ -6,6 +6,7 @@ import {
   MultiMatchSearchResponse,
   FetchSearchSuggestionsParams,
   FetchSearchSuggestionsResponse,
+  FetchSearchHotResponse,
   CloudSearchResponse,
 } from '@/shared/api/Search'
 
@@ -60,5 +61,17 @@ export function fetchSearchSuggestions(
     timeout: config.timeout ?? SEARCH_TIMEOUT,
     signal: config.signal,
     params,
+  })
+}
+
+// 热搜列表
+export function fetchSearchHot(
+  config: SearchRequestConfig = {}
+): Promise<FetchSearchHotResponse> {
+  return request({
+    url: '/search/hot/detail',
+    method: 'get',
+    timeout: config.timeout ?? SEARCH_TIMEOUT,
+    signal: config.signal,
   })
 }

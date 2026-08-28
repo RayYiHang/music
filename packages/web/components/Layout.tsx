@@ -5,7 +5,10 @@ import Topbar from '@/web/components/Topbar/TopbarDesktop'
 import { css, cx } from '@emotion/css'
 import player from '@/web/states/player'
 import { useSnapshot } from 'valtio'
+import { useEffect, useState } from 'react'
+import { resizeImage } from '@/web/utils/common'
 import Login from './Login'
+import SearchModal from './Search/SearchModal'
 import TitleBar from './TitleBar'
 import uiStates from '@/web/states/uiStates'
 import ContextMenus from './ContextMenus/ContextMenus'
@@ -14,7 +17,6 @@ import { ease } from '../utils/const'
 import { motion } from 'framer-motion'
 import Router from '@/web/components/Router'
 import BreathingBackground from '@/web/components/BreathingBackground'
-import useScrollIdle from '@/web/hooks/useScrollIdle'
 
 // Performance note: the background image behind the app is STATIC, so
 // full-screen backdrop-filter layers bought nothing — they only forced
@@ -29,10 +31,29 @@ const Layout = () => {
   const { fullscreen } = useSnapshot(uiStates)
   const showPlayer = !!playerSnapshot.track
   const { showBackgroundImage, theme, enableBreathingEffect } = useSnapshot(settings)
-  // Tracks whether any scroll container is scrolling (toggles
-  // html[data-scrolling] so CSS can cheap out on backdrop-filter
-  // during motion). Mounted once, app-wide.
-  useScrollIdle()
+
+  // Background cover: resized (the raw picUrl is often 1-3 MB) and
+  // preload-then-swap — swapping to an undecoded URL blanks the layer
+  // on a transparent window until the new image fetches.
+  const bgSrc = showBackgroundImage
+    ? resizeImage(playerSnapshot.track?.al?.picUrl ?? '', 'lg')
+    : ''
+  const [paintedBg, setPaintedBg] = useState('')
+  useEffect(() => {
+    if (!bgSrc) {
+      setPaintedBg('')
+      return
+    }
+    let cancelled = false
+    const img = new Image()
+    img.onload = () => {
+      if (!cancelled) setPaintedBg(bgSrc)
+    }
+    img.src = bgSrc
+    return () => {
+      cancelled = true
+    }
+  }, [bgSrc])
 
   return (
     <div>
@@ -81,7 +102,7 @@ const Layout = () => {
                 : 'bg-white/95'
             )}
             style={{
-              backgroundImage: showBackgroundImage ? `url(${player.track?.al?.picUrl})` : '',
+              backgroundImage: paintedBg ? `url(${paintedBg})` : '',
             }}
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -121,6 +142,7 @@ const Layout = () => {
             </div>
             <Main />
             <Login />
+            <SearchModal />
             {showPlayer && <Player />}
 
             {(window.env?.isWindows ||

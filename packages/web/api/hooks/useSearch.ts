@@ -5,11 +5,13 @@ import {
 } from '@tanstack/react-query'
 import {
   cloudSearch,
+  fetchSearchHot,
   fetchSearchSuggestions,
   multiMatchSearch,
 } from '@/web/api/search'
 import {
   CloudSearchResponse,
+  FetchSearchHotResponse,
   FetchSearchSuggestionsResponse,
   MultiMatchSearchResponse,
   SearchApiNames,
@@ -39,6 +41,19 @@ export function useSearchSuggestions(keywords: string) {
     gcTime: 5 * 60 * 1000,
     retry: 1,
     placeholderData: keepPreviousData,
+    refetchOnWindowFocus: false,
+  })
+}
+
+// 热搜列表 (SearchModal empty state)
+export function useSearchHot(enabled = true) {
+  return useQuery<FetchSearchHotResponse>({
+    queryKey: [SearchApiNames.FetchSearchHot],
+    queryFn: ({ signal }) => fetchSearchHot({ signal }).then(ensureOk),
+    enabled,
+    staleTime: 10 * 60 * 1000,
+    gcTime: 60 * 60 * 1000,
+    retry: 1,
     refetchOnWindowFocus: false,
   })
 }

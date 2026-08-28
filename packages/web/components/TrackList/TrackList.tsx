@@ -9,11 +9,14 @@ import useUserLikedTracksIDs, { useMutationLikeATrack } from '@/web/api/hooks/us
 import toast from 'react-hot-toast'
 import { memo, useEffect, useMemo, useState } from 'react'
 import contextMenus, { openContextMenu } from '@/web/states/contextMenus'
+import settings from '@/web/states/settings'
+import { downloadTrack } from '@/web/utils/download'
 import { NavLink } from 'react-router-dom'
 
 const Actions = ({ track }: { track: Track }) => {
   const { data: likedTracksIDs } = useUserLikedTracksIDs()
   const likeATrack = useMutationLikeATrack()
+  const { showDownloadActions } = useSnapshot(settings)
 
   // 当右键菜单开启时，让按钮组在鼠标移走了后也能继续显示
   const [isContextMenuOpen, setIsContextMenuOpen] = useState(false)
@@ -77,6 +80,27 @@ const Actions = ({ track }: { track: Track }) => {
           <Icon name='plus' className='h-5 w-5' />
         </div>
       </button>
+
+      {/* Download — opt-in via settings.showDownloadActions */}
+      {showDownloadActions && (
+        <button
+          className={cx(
+            'transition-opacity group-hover:opacity-100',
+            isContextMenuOpen ? 'opacity-100' : 'opacity-0'
+          )}
+        >
+          <div
+            onClick={() => downloadTrack(track.id)}
+            className={cx(
+              'mr-3 flex h-10 w-10 items-center justify-center rounded-full ',
+              'transition-colors duration-400 dark:hover:bg-white/30 dark:hover:text-white/70',
+              'hover:bg-black/30 hover:text-black/70'
+            )}
+          >
+            <Icon name='download' className='h-5 w-5' />
+          </div>
+        </button>
+      )}
 
       {/* Like */}
       <button
