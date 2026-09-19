@@ -9,6 +9,7 @@ import fastifyCookie from '@fastify/cookie'
 import fastifyMultipart from '@fastify/multipart'
 import fastifyStatic from '@fastify/static'
 import fastify from 'fastify'
+import { registerLoopbackHostCheck } from '../utils/loopbackHostCheck'
 
 log.info('[electron] appServer/appServer.ts')
 
@@ -36,8 +37,12 @@ const initAppServer = async () => {
       ? process.env.ELECTRON_WEB_SERVER_PORT || 42710
       : process.env.ELECTRON_DEV_NETEASE_API_PORT || 30001
   )
-  await server.listen({ port })
-  log.info(`[appServer] http server listening on port ${port}`)
+  const host = '127.0.0.1'
+
+  registerLoopbackHostCheck(server, port)
+
+  await server.listen({ port, host })
+  log.info(`[appServer] http server listening on ${host}:${port}`)
 
   return server
 }

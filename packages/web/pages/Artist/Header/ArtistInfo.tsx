@@ -4,6 +4,7 @@ import { cx, css } from '@emotion/css'
 import { useTranslation } from 'react-i18next'
 import { useState } from 'react'
 import DescriptionViewer from '@/web/components/DescriptionViewer'
+import { sanitizeDescriptionHtml } from '@/web/utils/sanitizeHtml'
 
 const ArtistInfo = ({ artist, isLoading }: { artist?: Artist; isLoading: boolean }) => {
   const { t, i18n } = useTranslation()
@@ -76,7 +77,7 @@ const ArtistInfo = ({ artist, isLoading }: { artist?: Artist; isLoading: boolean
               `
             )}
             onClick={() => setIsOpenDescription(true)}
-            dangerouslySetInnerHTML={{ __html: description }}
+            dangerouslySetInnerHTML={{ __html: sanitizeDescriptionHtml(description) }}
           ></div>
         ))}
 

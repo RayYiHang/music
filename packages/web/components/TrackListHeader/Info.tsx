@@ -6,6 +6,7 @@ import useIsMobile from '@/web/hooks/useIsMobile'
 import { ReactNode, useState } from 'react'
 import { motion } from 'framer-motion'
 import DescriptionViewer from '../DescriptionViewer'
+import { sanitizeDescriptionHtml } from '@/web/utils/sanitizeHtml'
 
 const Info = ({
   title,
@@ -76,7 +77,7 @@ const Info = ({
           transition={{ duration: 0.3 }}
           className='line-clamp-3 mt-6 whitespace-pre-wrap text-14 font-bold transition-colors duration-300'
           dangerouslySetInnerHTML={{
-            __html: description,
+            __html: sanitizeDescriptionHtml(description),
           }}
           onClick={() => setIsOpenDescription(true)}
         ></motion.div>

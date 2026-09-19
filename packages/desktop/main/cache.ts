@@ -7,6 +7,7 @@ import * as musicMetadata from 'music-metadata'
 import { CacheAPIs, CacheAPIsParams } from '@/shared/CacheAPIs'
 import { TablesStructures } from './db'
 import { FastifyReply } from 'fastify'
+import { resolveCacheAudioPath } from './utils/cacheAudioPath'
 
 log.info('[electron] cache.ts')
 
@@ -274,17 +275,17 @@ class Cache {
   }
 
   getAudio(fileName: string, reply: FastifyReply) {
-    if (!fileName) {
-      return reply.status(400).send({ error: 'No filename provided' })
+    const filePath = resolveCacheAudioPath(app.getPath('userData'), fileName)
+    if (!filePath) {
+      return reply.status(400).send({ error: 'Invalid filename' })
     }
     const id = Number(fileName.split('-')[0])
 
     try {
-      const path = `${app.getPath('userData')}/audio_cache/${fileName}`
-      const audio = fs.readFileSync(path)
+      const audio = fs.readFileSync(filePath)
       if (audio.byteLength === 0) {
         db.delete(Tables.Audio, id)
-        fs.unlinkSync(path)
+        fs.unlinkSync(filePath)
         return reply.status(404).send({ error: 'Audio not found' })
       }
       db.update(Tables.Audio, id, { queriedAt: Date.now() })

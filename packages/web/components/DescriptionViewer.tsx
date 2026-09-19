@@ -4,6 +4,7 @@ import { useEffect } from 'react'
 import { createPortal } from 'react-dom'
 import uiStates from '../states/uiStates'
 import { ease } from '../utils/const'
+import { sanitizeDescriptionHtml } from '../utils/sanitizeHtml'
 import Icon from './Icon'
 
 function DescriptionViewer({
@@ -72,7 +73,7 @@ function DescriptionViewer({
                   )}
                 >
                   <p
-                    dangerouslySetInnerHTML={{ __html: description }}
+                    dangerouslySetInnerHTML={{ __html: sanitizeDescriptionHtml(description) }}
                     className='mt-8 whitespace-pre-wrap pb-8 text-16 font-bold leading-6 text-neutral-700 dark:text-neutral-200'
                   ></p>
                 </div>
